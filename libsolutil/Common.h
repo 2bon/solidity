@@ -41,18 +41,24 @@
 #include <libsolutil/vector_ref.h>
 
 #include <boost/version.hpp>
-#if (BOOST_VERSION < 106500)
-#error "Unsupported Boost version. At least 1.65 required."
-#endif
 
+#include <cstdint>
+#include <concepts>
+#include <functional>
 #include <map>
+#include <string>
 #include <utility>
 #include <vector>
-#include <functional>
-#include <string>
 
 namespace solidity
 {
+
+namespace concepts
+{
+/// Concept denoting some arithmetic type.
+template <typename T>
+concept arithmetic = std::integral<T> || std::floating_point<T>;
+}
 
 // Binary data types.
 using bytes = std::vector<uint8_t>;

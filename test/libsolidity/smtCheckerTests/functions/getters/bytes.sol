@@ -10,6 +10,6 @@ contract C {
 // ====
 // SMTEngine: all
 // ----
-// Warning 1218: (162-201): CHC: Error trying to invoke SMT solver.
-// Warning 6328: (162-201): CHC: Assertion violation might happen here.
-// Warning 4661: (162-201): BMC: Assertion violation happens here.
+// Warning 6328: (162-201): CHC: Assertion violation happens here.\nCounterexample:\nstr2 = [0x63]\na2 = [0x63]\n\nTransaction trace:\nC.constructor()\nState: str2 = [0x63]\nC.f()
+// Info 1391: CHC: 1 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

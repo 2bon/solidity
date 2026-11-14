@@ -7,10 +7,9 @@ contract C {
     return s[0];
   }
 }
-// ====
-// compileViaYul: also
 // ----
 // f(uint256[]): 0x20, 0x03, 0x1, 0x2, 0x3 -> 0x1
-// gas irOptimized: 111161
-// gas legacy: 111565
-// gas legacyOptimized: 111347
+// gas irOptimized: 110970
+// gas legacy: 112436
+// gas legacyOptimized: 111313
+// gas ssaCFGOptimized: 110963

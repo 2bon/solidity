@@ -36,6 +36,7 @@ set -e
 
 OPTIMIZE=${OPTIMIZE:-"0"}
 EVM=${EVM:-"invalid"}
+CPUs=${CPUs:-3}
 REPODIR="$(realpath "$(dirname "$0")/..")"
 
 IFS=" " read -r -a BOOST_TEST_ARGS <<< "$BOOST_TEST_ARGS"
@@ -67,14 +68,14 @@ get_logfile_basename() {
 # long-running test cases are next to each other.
 CIRCLE_NODE_INDEX=$(((CIRCLE_NODE_INDEX + 23 * INDEX_SHIFT) % CIRCLE_NODE_TOTAL))
 
-CPUs=3
 PIDs=()
 for run in $(seq 0 $((CPUs - 1)))
 do
     BOOST_TEST_ARGS_RUN=(
         "--color_output=no"
         "--show_progress=yes"
-        "--logger=JUNIT,error,test_results/$(get_logfile_basename "$run").xml"
+        "--logger=JUNIT,error,test_results/$(get_logfile_basename "$((CPUs * CIRCLE_NODE_INDEX + run))").xml"
+        "--logger=HRF,error,stdout"
         "${BOOST_TEST_ARGS[@]}"
     )
     SOLTEST_ARGS=("--evm-version=$EVM" "${SOLTEST_FLAGS[@]}")
@@ -91,7 +92,7 @@ do
 done
 
 # wait for individual processes to get their exit status
-for pid in ${PIDs[*]}
+for pid in "${PIDs[@]}"
 do
     wait "$pid"
 done

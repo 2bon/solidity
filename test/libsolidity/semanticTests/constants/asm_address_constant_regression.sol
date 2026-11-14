@@ -1,4 +1,4 @@
-// Test for regression of https://github.com/ethereum/solidity/issues/8406
+// Test for regression of https://github.com/argotorg/solidity/issues/8406
 
 contract C {
   address constant e = 0x1212121212121212121212121000002134593163;
@@ -7,9 +7,5 @@ contract C {
     assembly { z := e }
   }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 0x00

@@ -23,15 +23,9 @@ contract C {
 // ====
 // SMTEngine: all
 // ----
-// Warning 1218: (322-352): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (419-449): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (528-558): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (577-607): CHC: Error trying to invoke SMT solver.
-// Warning 6328: (322-352): CHC: Assertion violation might happen here.
-// Warning 6328: (419-449): CHC: Assertion violation might happen here.
-// Warning 6328: (528-558): CHC: Assertion violation might happen here.
-// Warning 6328: (577-607): CHC: Assertion violation might happen here.
-// Warning 4661: (322-352): BMC: Assertion violation happens here.
-// Warning 4661: (419-449): BMC: Assertion violation happens here.
-// Warning 4661: (528-558): BMC: Assertion violation happens here.
-// Warning 4661: (577-607): BMC: Assertion violation happens here.
+// Warning 6328: (322-352): CHC: Assertion violation happens here.\nCounterexample:\n\nt = false\nx = 0\ny = 0\nz = 0\nb4 = []\nb5 = []\n\nTransaction trace:\nC.constructor()\nC.abiencodePackedSimple(false, 0, 0, 0, a, b) -- counterexample incomplete; parameter name used instead of value
+// Warning 6328: (419-449): CHC: Assertion violation happens here.
+// Warning 6328: (528-558): CHC: Assertion violation happens here.
+// Warning 6328: (577-607): CHC: Assertion violation happens here.
+// Info 1391: CHC: 1 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

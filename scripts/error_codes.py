@@ -171,7 +171,7 @@ def print_ids_per_file(ids, id_to_file_names, top_dir):
 
 def examine_id_coverage(top_dir, source_id_to_file_names, new_ids_only=False):
     test_sub_dirs = [
-        path.join("test", "libsolidity", "errorRecoveryTests"),
+        path.join("test", "libsolidity", "natspecJSON"),
         path.join("test", "libsolidity", "smtCheckerTests"),
         path.join("test", "libsolidity", "syntaxTests"),
         path.join("test", "libyul", "yulSyntaxTests")
@@ -201,8 +201,16 @@ def examine_id_coverage(top_dir, source_id_to_file_names, new_ids_only=False):
                 # The warning may or may not exist in a compiler build.
         "4591", # "There are more than 256 warnings. Ignoring the rest."
                 # Due to 3805, the warning lists look different for different compiler builds.
-        "1834", # Unimplemented feature error, as we do not test it anymore via cmdLineTests
-        "5430"  # basefee being used in inline assembly for EVMVersion < london
+        "1920", # Unimplemented feature error from YulStack (currently there are no UnimplementedFeatureErrors thrown by libyul)
+        "7053", # Unimplemented feature error (parsing stage), currently has no tests
+        "2339", # SMTChecker, covered by CL tests
+        "6240", # SMTChecker, covered by CL tests
+        "2788", # SMTChecker: BMC: verification condition(s) could not be proved
+        "1733", # AsmAnalysis: expecting bool expression (everything is implicitly bool without types in Yul)
+        "9547", # AsmAnalysis: assigning incompatible types in Yul (whitelisted as there are currently no types)
+        "5026", # ContractLevelChecker: too difficult to exceed transient storage max size due to only value types supported.
+        "1049", # AsmAnalysis: SLOTNUM only available for Amsterdam-compatible VMs. Only reachable once Amsterdam
+                # becomes the default EVM version.
     }
     assert len(test_ids & white_ids) == 0, "The sets are not supposed to intersect"
     test_ids |= white_ids
@@ -227,13 +235,36 @@ def examine_id_coverage(top_dir, source_id_to_file_names, new_ids_only=False):
             return False
 
     old_source_only_ids = {
-        "1584", "1823",
-        "1988", "2066", "2833", "3356",
-        "3893", "3996", "4010", "4802",
-        "5272", "5622", "7128", "7400",
-        "7589", "7593", "7649", "7710",
-        "8065", "8084", "8140",
-        "8312", "8592", "9134", "9609",
+        "1218",
+        "1584",
+        "1823",
+        "1988",
+        "2066",
+        "2833",
+        "3356",
+        "3893",
+        "3996",
+        "4010",
+        "4458",
+        "4802",
+        "4902",
+        "5272",
+        "5798",
+        "5840",
+        "7128",
+        "7400",
+        "7589",
+        "7593",
+        "7649",
+        "7710",
+        "8065",
+        "8084",
+        "8140",
+        "8158",
+        "8312",
+        "8592",
+        "9134",
+        "9609",
     }
 
     new_source_only_ids = source_only_ids - old_source_only_ids

@@ -14,10 +14,6 @@ contract B is A {
         return f();
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 2
 // g() -> 2

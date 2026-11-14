@@ -22,13 +22,13 @@
 set -e
 
 source scripts/common.sh
-source test/externalTests/common.sh
+source scripts/externalTests/common.sh
 
 REPO_ROOT=$(realpath "$(dirname "$0")/../..")
 
 verify_input "$@"
 BINARY_TYPE="$1"
-BINARY_PATH="$2"
+BINARY_PATH="$(realpath "$2")"
 SELECTED_PRESETS="$3"
 
 function compile_fn { npm run compile; }
@@ -38,7 +38,6 @@ function test_fn { HARDHAT_DEPLOY_FIXTURE=true npx --no hardhat --no-compile tes
 function bleeps_test
 {
     local repo="https://github.com/wighawag/bleeps"
-    local ref_type=branch
     local ref=main
     local config_file="hardhat.config.ts"
     local config_var=config
@@ -46,9 +45,9 @@ function bleeps_test
     local compile_only_presets=()
     local settings_presets=(
         "${compile_only_presets[@]}"
-        #ir-no-optimize            # Compilation fails with: "YulException: Variable param_0 is 2 slot(s) too deep inside the stack."
-        #ir-optimize-evm-only      # Compilation fails with: "YulException: Variable param_0 is 2 slot(s) too deep inside the stack."
-        ir-optimize-evm+yul
+        #ir-no-optimize            # Compilation fails with: "YulException: Variable expr_15509_mpos is 4 too deep in the stack". No memoryguard was present.
+        #ir-optimize-evm-only      # Compilation fails with: "YulException: Variable expr_15260_mpos is 4 too deep in the stack". No memoryguard was present.
+        #ir-optimize-evm+yul       # Compilation fails with: "YulException: Variable expr_15208_mpos is 1 too deep in the stack". No memoryguard was present.
         #legacy-no-optimize        # Compilation fails with: "CompilerError: Stack too deep, try removing local variables."
         #legacy-optimize-evm-only  # Compilation fails with: "CompilerError: Stack too deep, try removing local variables."
         legacy-optimize-evm+yul
@@ -58,7 +57,7 @@ function bleeps_test
     print_presets_or_exit "$SELECTED_PRESETS"
 
     setup_solc "$DIR" "$BINARY_TYPE" "$BINARY_PATH"
-    download_project "$repo" "$ref_type" "$ref" "$DIR"
+    download_project "$repo" "$ref" "$DIR"
 
     pushd "common-lib/"
     neutralize_package_json_hooks
@@ -85,6 +84,18 @@ function bleeps_test
     force_hardhat_compiler_settings "$config_file" "$(first_word "$SELECTED_PRESETS")" "$config_var"
     npm install npm-run-all
     npm install
+
+    # Causes a test failure with hardhat 2.11.0 (latest at the moment of writing this)
+    # TODO: Remove when https://github.com/wighawag/bleeps/issues/4 is resolved
+    npm install hardhat@2.10.2
+
+    # TODO: Bleeps depends on OpenZeppelin 4.3.2, which is affected by
+    # https://github.com/OpenZeppelin/openzeppelin-contracts/pull/3293.
+    # Forcing OZ >= 4.6.0 fixes this but it also causes a lot of unrelated compilation errors.
+    # Remove this when Bleeps gets updated to support newer OpenZeppelin.
+    perl -i -0pe \
+        "s/(function hashProposal\(\n        address\[\] )calldata( targets,\n        uint256\[\] )calldata( values,\n        bytes\[\] )calldata( calldatas,)/\1memory\2memory\3memory\4/g" \
+        node_modules/@openzeppelin/contracts/governance/IGovernor.sol
 
     replace_version_pragmas
 

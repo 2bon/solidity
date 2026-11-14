@@ -11,8 +11,5 @@ contract C {
         x = f(a);
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // g() -> 0x78

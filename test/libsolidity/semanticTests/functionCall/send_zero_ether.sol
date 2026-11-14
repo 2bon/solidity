@@ -13,13 +13,12 @@ contract Main {
         return payable(r).send(0);
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // constructor(), 20 wei ->
-// gas irOptimized: 102862
-// gas legacy: 116691
-// gas legacyOptimized: 100361
+// gas irOptimized: 56298
+// gas irOptimized code: 37200
+// gas legacy: 57555
+// gas legacy code: 53000
+// gas legacyOptimized: 56463
+// gas legacyOptimized code: 39600
 // s() -> true

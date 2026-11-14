@@ -24,6 +24,7 @@
 #include <libsolidity/ast/ASTVisitor.h>
 #include <libsolidity/codegen/ir/IRLValue.h>
 #include <libsolidity/codegen/ir/IRVariable.h>
+#include <libsolidity/interface/OptimiserSettings.h>
 
 #include <functional>
 
@@ -65,11 +66,13 @@ public:
 	IRGeneratorForStatements(
 		IRGenerationContext& _context,
 		YulUtilFunctions& _utils,
+		OptimiserSettings& _optimiserSettings,
 		std::function<std::string()> _placeholderCallback = {}
 	):
 		IRGeneratorForStatementsBase(_context),
 		m_placeholderCallback(std::move(_placeholderCallback)),
-		m_utils(_utils)
+		m_utils(_utils),
+		m_optimiserSettings(_optimiserSettings)
 	{}
 
 	std::string code() const override;
@@ -102,8 +105,8 @@ public:
 	}
 
 	/// @returns the name of a function that computes the value of the given constant
-	/// and also generates the function.
-	std::string constantValueFunction(VariableDeclaration const& _constant);
+	/// in the given arithmetic mode and also generates the function.
+	std::string constantValueFunction(VariableDeclaration const& _constant, Arithmetic _arithmetic);
 
 	void endVisit(VariableDeclarationStatement const& _variableDeclaration) override;
 	bool visit(Conditional const& _conditional) override;
@@ -129,6 +132,7 @@ public:
 	void endVisit(IndexRangeAccess const& _indexRangeAccess) override;
 	void endVisit(Identifier const& _identifier) override;
 	bool visit(Literal const& _literal) override;
+	void endVisit(RevertStatement const& _revertStatement) override;
 
 	bool visit(TryStatement const& _tryStatement) override;
 	bool visit(TryCatchClause const& _tryCatchClause) override;
@@ -224,6 +228,7 @@ private:
 
 	/// Assigns the value of @a _value to the lvalue @a _lvalue.
 	void writeToLValue(IRLValue const& _lvalue, IRVariable const& _value);
+
 	/// @returns a fresh IR variable containing the value of the lvalue @a _lvalue.
 	IRVariable readFromLValue(IRLValue const& _lvalue);
 
@@ -235,7 +240,8 @@ private:
 		Expression const* _conditionExpression,
 		Statement const*  _initExpression = nullptr,
 		ExpressionStatement const* _loopExpression = nullptr,
-		bool _isDoWhile = false
+		bool _isDoWhile = false,
+		bool _isSimpleCounterLoop = false
 	);
 
 	static Type const& type(Expression const& _expression);
@@ -245,6 +251,9 @@ private:
 	std::function<std::string()> m_placeholderCallback;
 	YulUtilFunctions& m_utils;
 	std::optional<IRLValue> m_currentLValue;
+	OptimiserSettings m_optimiserSettings;
+	/// Whether to use checked or wrapping arithmetic.
+	Arithmetic m_currentArithmeticMode = Arithmetic::Checked;
 };
 
 }

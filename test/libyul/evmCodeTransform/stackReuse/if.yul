@@ -2,6 +2,7 @@
 { let z := mload(0) if z { let x := z } let t := 3 }
 // ====
 // stackOptimization: true
+// EVMVersion: =current
 // ----
 //     /* "":72:73   */
 //   0x00
@@ -13,8 +14,6 @@
 //   jumpi
 //     /* "":55:107   */
 // tag_2:
-//     /* "":95:105   */
-//   pop
 //     /* "":104:105   */
 //   0x03
 //     /* "":55:107   */

@@ -22,13 +22,13 @@
 set -e
 
 source scripts/common.sh
-source test/externalTests/common.sh
+source scripts/externalTests/common.sh
 
 REPO_ROOT=$(realpath "$(dirname "$0")/../..")
 
 verify_input "$@"
 BINARY_TYPE="$1"
-BINARY_PATH="$2"
+BINARY_PATH="$(realpath "$2")"
 SELECTED_PRESETS="$3"
 
 function compile_fn { npm run build; }
@@ -37,7 +37,6 @@ function test_fn { npm run test; }
 function yield_liquidator_test
 {
     local repo="https://github.com/yieldprotocol/yield-liquidator-v2"
-    local ref_type=branch
     local ref="master"
     local config_file="hardhat.config.ts"
     local config_var="module.exports"
@@ -45,8 +44,8 @@ function yield_liquidator_test
     local compile_only_presets=()
     local settings_presets=(
         "${compile_only_presets[@]}"
-        #ir-no-optimize           # Compilation fails with "YulException: Variable var_roles_168_mpos is 2 slot(s) too deep inside the stack."
-        #ir-optimize-evm-only     # Compilation fails with "YulException: Variable var__33 is 6 slot(s) too deep inside the stack."
+        ir-no-optimize
+        ir-optimize-evm-only
         ir-optimize-evm+yul
         legacy-optimize-evm-only
         legacy-optimize-evm+yul
@@ -57,14 +56,36 @@ function yield_liquidator_test
     print_presets_or_exit "$SELECTED_PRESETS"
 
     setup_solc "$DIR" "$BINARY_TYPE" "$BINARY_PATH"
-    download_project "$repo" "$ref_type" "$ref" "$DIR"
+    download_project "$repo" "$ref" "$DIR"
 
     neutralize_package_lock
     neutralize_package_json_hooks
     force_hardhat_compiler_binary "$config_file" "$BINARY_TYPE" "$BINARY_PATH"
     force_hardhat_compiler_settings "$config_file" "$(first_word "$SELECTED_PRESETS")" "$config_var"
     force_hardhat_unlimited_contract_size "$config_file" "$config_var"
+    # TODO: Remove after https://github.com/Uniswap/sdks/issues/557 is resolved
+    # Pin broken @uniswap/* packages via overrides. The following versions were published with
+    # 'workspace:*' deps that npm cannot resolve (EUNSUPPORTEDPROTOCOL), causing a silent exit-1:
+    #   @uniswap/v3-sdk@3.29.2  (via smart-order-router -> ^3.7.0)
+    #   @uniswap/v4-sdk@1.29.2  (via smart-order-router -> router-sdk -> ^1.20.0)
+    #   @uniswap/v2-sdk@4.19.2  (via smart-order-router -> router-sdk -> ^4.14.0)
+    # Cannot just run npm install with unbroken version because these are indirect dependencies.
+    node -e "
+        const fs = require('fs');
+        const p = JSON.parse(fs.readFileSync('package.json'));
+        p.overrides = Object.assign(p.overrides || {}, {
+            '@uniswap/v3-sdk': '3.29.1',
+            '@uniswap/v4-sdk': '1.29.1',
+            '@uniswap/v2-sdk': '4.19.1',
+        });
+        fs.writeFileSync('package.json', JSON.stringify(p, null, 2));
+    "
     npm install
+
+    # The contract below is not used in any test and it depends on ISwapRouter which does not exists
+    # in the main repository.
+    # See: https://github.com/yieldprotocol/yield-liquidator-v2/blob/9a49d9a0e9398f6a6c07bad531e77d1001a1166f/src/swap_router.rs#L94
+    rm --force contracts/.YvBasicFlashLiquidator.sol
 
     replace_version_pragmas
     neutralize_packaged_contracts

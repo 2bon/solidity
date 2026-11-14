@@ -18,6 +18,7 @@ contract C {
 // SMTEngine: all
 // SMTIgnoreCex: yes
 // ----
+// Warning 9207: (175-186): 'transfer' is deprecated and scheduled for removal. Use 'call{value: <amount>}("")' instead.
 // Warning 6328: (280-314): CHC: Assertion violation happens here.
-// Info 1180: Contract invariant(s) for :C:\n((!(c <= 1) || !((:var 1).balances[address(this)] <= 90)) && !((:var 1).balances[address(this)] <= 81) && (!(c <= 0) || !((:var 1).balances[address(this)] <= 100)))\n
-// Warning 1236: (175-190): BMC: Insufficient funds happens here.
+// Info 1391: CHC: 3 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

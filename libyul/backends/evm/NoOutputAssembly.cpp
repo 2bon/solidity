@@ -26,18 +26,35 @@
 
 #include <libevmasm/Instruction.h>
 
+#include <range/v3/view/enumerate.hpp>
 #include <range/v3/view/iota.hpp>
 
-using namespace std;
 using namespace solidity;
 using namespace solidity::yul;
 using namespace solidity::util;
 using namespace solidity::langutil;
 
+namespace
+{
+
+void modifyBuiltinToNoOutput(BuiltinFunctionForEVM& _builtin)
+{
+	_builtin.generateCode = [_builtin](FunctionCall const& _call, AbstractAssembly& _assembly, BuiltinContext&)
+	{
+		for (size_t i: ranges::views::iota(0u, _call.arguments.size()))
+			if (!_builtin.literalArgument(i))
+				_assembly.appendInstruction(evmasm::Instruction::POP);
+
+		for (size_t i = 0; i < _builtin.numReturns; i++)
+			_assembly.appendConstant(u256(0));
+	};
+}
+
+}
 
 void NoOutputAssembly::appendInstruction(evmasm::Instruction _instr)
 {
-	m_stackHeight += instructionInfo(_instr).ret - instructionInfo(_instr).args;
+	m_stackHeight += instructionInfo(_instr, m_evmVersion).ret - instructionInfo(_instr, m_evmVersion).args;
 }
 
 void NoOutputAssembly::appendConstant(u256 const&)
@@ -60,19 +77,19 @@ NoOutputAssembly::LabelID NoOutputAssembly::newLabelId()
 	return 1;
 }
 
-AbstractAssembly::LabelID NoOutputAssembly::namedLabel(string const&, size_t, size_t, optional<size_t>)
+AbstractAssembly::LabelID NoOutputAssembly::namedLabel(std::string const&, size_t, size_t, std::optional<size_t>)
 {
 	return 1;
 }
 
-void NoOutputAssembly::appendLinkerSymbol(string const&)
+void NoOutputAssembly::appendLinkerSymbol(std::string const&)
 {
 	yulAssert(false, "Linker symbols not yet implemented.");
 }
 
 void NoOutputAssembly::appendVerbatim(bytes, size_t _arguments, size_t _returnVariables)
 {
-	m_stackHeight += static_cast<int>(_returnVariables - _arguments);
+	m_stackHeight += static_cast<int>(_returnVariables) - static_cast<int>(_arguments);
 }
 
 void NoOutputAssembly::appendJump(int _stackDiffAfter, JumpType)
@@ -98,7 +115,7 @@ void NoOutputAssembly::appendAssemblySize()
 	appendInstruction(evmasm::Instruction::PUSH1);
 }
 
-pair<shared_ptr<AbstractAssembly>, AbstractAssembly::SubID> NoOutputAssembly::createSubAssembly(std::string)
+std::pair<std::shared_ptr<AbstractAssembly>, AbstractAssembly::SubID> NoOutputAssembly::createSubAssembly(bool, std::string)
 {
 	yulAssert(false, "Sub assemblies not implemented.");
 	return {};
@@ -116,7 +133,7 @@ void NoOutputAssembly::appendDataSize(std::vector<AbstractAssembly::SubID> const
 
 AbstractAssembly::SubID NoOutputAssembly::appendData(bytes const&)
 {
-	return 1;
+	return {1};
 }
 
 
@@ -133,17 +150,46 @@ void NoOutputAssembly::appendImmutableAssignment(std::string const&)
 NoOutputEVMDialect::NoOutputEVMDialect(EVMDialect const& _copyFrom):
 	EVMDialect(_copyFrom.evmVersion(), _copyFrom.providesObjectAccess())
 {
-	for (auto& fun: m_functions)
-	{
-		size_t returns = fun.second.returns.size();
-		fun.second.generateCode = [=](FunctionCall const& _call, AbstractAssembly& _assembly, BuiltinContext&)
-		{
-			for (size_t i: ranges::views::iota(0u, _call.arguments.size()))
-				if (!fun.second.literalArgument(i))
-					_assembly.appendInstruction(evmasm::Instruction::POP);
+	// save the modified functions here - note that this only has to be done once because we modify all of
+	// them in one go, later reference pointers to this static vector
+	static std::vector<BuiltinFunctionForEVM> noOutputBuiltins = defineNoOutputBuiltins();
 
-			for (size_t i = 0; i < returns; i++)
-				_assembly.appendConstant(u256(0));
-		};
+	yulAssert(m_functions.size() == noOutputBuiltins.size(), "Function count mismatch.");
+	for (auto const& [index, builtinFunction]: m_functions | ranges::views::enumerate)
+	{
+		if (builtinFunction)
+			m_functions[index] = &noOutputBuiltins[index];
+		else
+			m_functions[index] = nullptr;
 	}
+}
+
+BuiltinFunctionForEVM const& NoOutputEVMDialect::builtin(BuiltinHandle const& _handle) const
+{
+	if (isVerbatimHandle(_handle))
+		// for verbatims the modification is performed lazily as they are stored in a lookup table fashion
+		if (
+			auto& builtin = m_verbatimFunctions[_handle.id];
+			!builtin
+		)
+		{
+			builtin = std::make_unique<BuiltinFunctionForEVM>(createVerbatimFunctionFromHandle(_handle));
+			modifyBuiltinToNoOutput(*builtin);
+		}
+	return EVMDialect::builtin(_handle);
+}
+
+std::vector<BuiltinFunctionForEVM> NoOutputEVMDialect::defineNoOutputBuiltins()
+{
+	std::vector<BuiltinFunctionForEVM> modifiedBuiltins;
+	modifiedBuiltins.reserve(allBuiltins().functions().size());
+
+	for (auto const& [_, builtin]: allBuiltins().functions())
+	{
+		auto noOutputFunction = builtin;
+		modifyBuiltinToNoOutput(noOutputFunction);
+		modifiedBuiltins.push_back(std::move(noOutputFunction));
+	}
+
+	return modifiedBuiltins;
 }

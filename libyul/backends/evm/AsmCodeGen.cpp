@@ -26,7 +26,8 @@
 #include <libyul/AST.h>
 #include <libyul/AsmAnalysisInfo.h>
 
-using namespace std;
+#include <libsolutil/StackTooDeepString.h>
+
 using namespace solidity;
 using namespace solidity::yul;
 using namespace solidity::util;
@@ -61,7 +62,7 @@ void CodeGenerator::assemble(
 		assertThrow(
 			false,
 			langutil::StackTooDeepError,
-			"Stack too deep when compiling inline assembly" +
+			util::stackTooDeepString + " When compiling inline assembly" +
 			(transform.stackErrors().front().comment() ? ": " + *transform.stackErrors().front().comment() : ".")
 		);
 }

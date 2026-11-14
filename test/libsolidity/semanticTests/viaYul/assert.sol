@@ -13,9 +13,6 @@ contract C {
         assert(true);
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f(bool): true -> true
 // f(bool): false -> FAILURE, hex"4e487b71", 0x01

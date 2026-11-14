@@ -12,26 +12,27 @@
         }
     }
 }
+// ====
+// EVMVersion: >=shanghai
 // ----
 // step: fullSuite
 //
 // {
 //     {
 //         f()
+//         f()
+//         f()
 //         sstore(0, 1)
-//         f()
-//         f()
 //     }
 //     function f()
 //     {
 //         let b := 10
-//         let _1 := 0
-//         let a := calldataload(_1)
-//         let _2 := iszero(a)
+//         let a := calldataload(0)
+//         let _1 := iszero(a)
 //         for { } iszero(b) { b := add(b, not(0)) }
 //         {
-//             mstore(a, _1)
-//             if _2 { leave }
+//             mstore(a, 0)
+//             if _1 { leave }
 //         }
 //     }
 // }

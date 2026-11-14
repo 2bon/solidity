@@ -10,11 +10,10 @@ contract C {
         emit E(arr);
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // createEvent(uint256): 42 ->
 // ~ emit E(uint256[]): 0x20, 0x03, 0x2a, 0x2b, 0x2c
-// gas irOptimized: 114746
-// gas legacy: 116393
-// gas legacyOptimized: 114415
+// gas irOptimized: 114228
+// gas legacy: 116313
+// gas legacyOptimized: 114407
+// gas ssaCFGOptimized: 114258

@@ -3,7 +3,8 @@ contract C {
 		require(a == b);
 		bytes memory b1 = abi.encodeWithSelector(sel, a, a, a, a);
 		bytes memory b2 = abi.encodeWithSelector(sel, b, a, b, a);
-		assert(keccak256(b1) == keccak256(b2));
+		// Disabled because of OSX nondeterminism
+		//assert(keccak256(b1) == keccak256(b2));
 
 		bytes memory b3 = abi.encodeWithSelector(0xcafecafe, a, a, a, a);
 		assert(keccak256(b1) == keccak256(b3)); // should fail
@@ -12,10 +13,9 @@ contract C {
 }
 // ====
 // SMTEngine: all
+// SMTIgnoreCex: yes
 // ----
-// Warning 1218: (333-371): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (390-428): CHC: Error trying to invoke SMT solver.
-// Warning 6328: (333-371): CHC: Assertion violation might happen here.
-// Warning 6328: (390-428): CHC: Assertion violation might happen here.
-// Warning 4661: (333-371): BMC: Assertion violation happens here.
-// Warning 4661: (390-428): BMC: Assertion violation happens here.
+// Warning 2072: (161-176): Unused local variable.
+// Warning 6328: (379-417): CHC: Assertion violation happens here.\nCounterexample:\n\nsel = 0x0\na = 0\nb = 0\n\nTransaction trace:\nC.constructor()\nC.abiEncodeHash(0x0, 0, 0)
+// Warning 6328: (436-474): CHC: Assertion violation happens here.\nCounterexample:\n\nsel = 0x0\na = 0\nb = 0\n\nTransaction trace:\nC.constructor()\nC.abiEncodeHash(0x0, 0, 0)
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

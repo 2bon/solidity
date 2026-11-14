@@ -20,21 +20,38 @@
 
 #include <libsolidity/formal/EncodingContext.h>
 
+#include <libsolidity/ast/AST.h>
 #include <libsolidity/ast/TypeProvider.h>
 #include <libsolidity/ast/Types.h>
 #include <libsolutil/CommonData.h>
 #include <memory>
 #include <vector>
 
-using namespace std;
 using namespace solidity::util;
 using namespace solidity::smtutil;
+
+
+namespace
+{
+	// HACK to get around Z3 bug in printing type names with spaces (https://github.com/Z3Prover/z3/issues/6850)
+	// Should be fixed in Z3 4.13.0
+	// TODO: Remove this afterwards
+	void sanitizeTypeName(std::string& name)
+	{
+		std::replace(name.begin(), name.end(), ' ', '_');
+		std::replace(name.begin(), name.end(), '(', '[');
+		std::replace(name.begin(), name.end(), ')', ']');
+	}
+}
 
 namespace solidity::frontend::smt
 {
 
 SortPointer smtSort(frontend::Type const& _type)
 {
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(&_type))
+		return smtSort(userType->underlyingType());
+
 	switch (smtKind(_type))
 	{
 	case Kind::Int:
@@ -49,7 +66,7 @@ SortPointer smtSort(frontend::Type const& _type)
 	{
 		auto fType = dynamic_cast<frontend::FunctionType const*>(&_type);
 		solAssert(fType, "");
-		vector<SortPointer> parameterSorts = smtSort(fType->parameterTypes());
+		std::vector<SortPointer> parameterSorts = smtSort(fType->parameterTypes());
 		auto returnTypes = fType->returnParameterTypes();
 		SortPointer returnSort;
 		// TODO change this when we support tuples.
@@ -61,22 +78,22 @@ SortPointer smtSort(frontend::Type const& _type)
 			returnSort = SortProvider::uintSort;
 		else
 			returnSort = smtSort(*returnTypes.front());
-		return make_shared<FunctionSort>(parameterSorts, returnSort);
+		return std::make_shared<FunctionSort>(parameterSorts, returnSort);
 	}
 	case Kind::Array:
 	{
-		shared_ptr<ArraySort> array;
+		std::shared_ptr<ArraySort> array;
 		if (isMapping(_type))
 		{
 			auto mapType = dynamic_cast<frontend::MappingType const*>(&_type);
 			solAssert(mapType, "");
-			array = make_shared<ArraySort>(smtSortAbstractFunction(*mapType->keyType()), smtSortAbstractFunction(*mapType->valueType()));
+			array = std::make_shared<ArraySort>(smtSortAbstractFunction(*mapType->keyType()), smtSortAbstractFunction(*mapType->valueType()));
 		}
 		else if (isStringLiteral(_type))
 		{
 			auto stringLitType = dynamic_cast<frontend::StringLiteralType const*>(&_type);
 			solAssert(stringLitType, "");
-			array = make_shared<ArraySort>(SortProvider::uintSort, SortProvider::uintSort);
+			array = std::make_shared<ArraySort>(SortProvider::uintSort, SortProvider::uintSort);
 		}
 		else
 		{
@@ -89,10 +106,10 @@ SortPointer smtSort(frontend::Type const& _type)
 				solAssert(false, "");
 
 			solAssert(arrayType, "");
-			array = make_shared<ArraySort>(SortProvider::uintSort, smtSortAbstractFunction(*arrayType->baseType()));
+			array = std::make_shared<ArraySort>(SortProvider::uintSort, smtSortAbstractFunction(*arrayType->baseType()));
 		}
 
-		string tupleName;
+		std::string tupleName;
 		auto sliceArrayType = dynamic_cast<ArraySliceType const*>(&_type);
 		ArrayType const* arrayType = sliceArrayType ? &sliceArrayType->arrayType() : dynamic_cast<ArrayType const*>(&_type);
 		if (
@@ -106,8 +123,20 @@ SortPointer smtSort(frontend::Type const& _type)
 			// Solidity allows implicit conversion also when assigning arrays.
 			// So if the base type potentially has a size, that size cannot go
 			// in the tuple's name.
-			if (auto tupleSort = dynamic_pointer_cast<TupleSort>(array->range))
+			if (auto tupleSort = std::dynamic_pointer_cast<TupleSort>(array->range))
 				tupleName = tupleSort->name;
+			else if (isContract(*baseType))
+				// use a common sort for contracts so inheriting contracts do not cause conflicting SMT types
+				// solc handles types mismatch
+				tupleName = "contract";
+			else if (isFunction(*baseType))
+				// use a common sort for functions so pure and view modifier do not cause conflicting SMT types
+				// solc handles types mismatch
+				tupleName = "function";
+			else if (isAddress(*baseType))
+				// use a common sort for address and address payable so it does not cause conflicting SMT types
+				// solc handles types mismatch
+				tupleName = "address";
 			else if (
 				baseType->category() == frontend::Type::Category::Integer ||
 				baseType->category() == frontend::Type::Category::FixedPoint
@@ -123,25 +152,27 @@ SortPointer smtSort(frontend::Type const& _type)
 		else
 			tupleName = _type.toString(true);
 
+		sanitizeTypeName(tupleName);
 		tupleName += "_tuple";
 
-		return make_shared<TupleSort>(
+		return std::make_shared<TupleSort>(
 			tupleName,
-			vector<string>{tupleName + "_accessor_array", tupleName + "_accessor_length"},
-			vector<SortPointer>{array, SortProvider::uintSort}
+			std::vector<std::string>{tupleName + "_accessor_array", tupleName + "_accessor_length"},
+			std::vector<SortPointer>{array, SortProvider::uintSort}
 		);
 	}
 	case Kind::Tuple:
 	{
-		vector<string> members;
-		auto const& tupleName = _type.toString(true);
-		vector<SortPointer> sorts;
+		std::vector<std::string> members;
+		auto tupleName = _type.toString(true);
+		sanitizeTypeName(tupleName);
+		std::vector<SortPointer> sorts;
 
 		if (auto const* tupleType = dynamic_cast<frontend::TupleType const*>(&_type))
 		{
 			auto const& components = tupleType->components();
 			for (unsigned i = 0; i < components.size(); ++i)
-				members.emplace_back(tupleName + "_accessor_" + to_string(i));
+				members.emplace_back(tupleName + "_accessor_" + std::to_string(i));
 			sorts = smtSortAbstractFunction(tupleType->components());
 		}
 		else if (auto const* structType = dynamic_cast<frontend::StructType const*>(&_type))
@@ -158,7 +189,7 @@ SortPointer smtSort(frontend::Type const& _type)
 		else
 			solAssert(false, "");
 
-		return make_shared<TupleSort>(tupleName, members, sorts);
+		return std::make_shared<TupleSort>(tupleName, members, sorts);
 	}
 	default:
 		// Abstract case.
@@ -166,9 +197,9 @@ SortPointer smtSort(frontend::Type const& _type)
 	}
 }
 
-vector<SortPointer> smtSort(vector<frontend::Type const*> const& _types)
+std::vector<SortPointer> smtSort(std::vector<frontend::Type const*> const& _types)
 {
-	vector<SortPointer> sorts;
+	std::vector<SortPointer> sorts;
 	for (auto const& type: _types)
 		sorts.push_back(smtSort(*type));
 	return sorts;
@@ -181,9 +212,9 @@ SortPointer smtSortAbstractFunction(frontend::Type const& _type)
 	return smtSort(_type);
 }
 
-vector<SortPointer> smtSortAbstractFunction(vector<frontend::Type const*> const& _types)
+std::vector<SortPointer> smtSortAbstractFunction(std::vector<frontend::Type const*> const& _types)
 {
-	vector<SortPointer> sorts;
+	std::vector<SortPointer> sorts;
 	for (auto const& type: _types)
 		if (type)
 			sorts.push_back(smtSortAbstractFunction(*type));
@@ -194,6 +225,9 @@ vector<SortPointer> smtSortAbstractFunction(vector<frontend::Type const*> const&
 
 Kind smtKind(frontend::Type const& _type)
 {
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(&_type))
+		return smtKind(userType->underlyingType());
+
 	if (isNumber(_type))
 		return Kind::Int;
 	else if (isBool(_type))
@@ -210,6 +244,9 @@ Kind smtKind(frontend::Type const& _type)
 
 bool isSupportedType(frontend::Type const& _type)
 {
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(&_type))
+		return isSupportedType(userType->underlyingType());
+
 	return isNumber(_type) ||
 		isBool(_type) ||
 		isMapping(_type) ||
@@ -224,14 +261,14 @@ bool isSupportedTypeDeclaration(frontend::Type const& _type)
 		isFunction(_type);
 }
 
-pair<bool, shared_ptr<SymbolicVariable>> newSymbolicVariable(
+std::pair<bool, std::shared_ptr<SymbolicVariable>> newSymbolicVariable(
 	frontend::Type const& _type,
 	std::string const& _uniqueName,
 	EncodingContext& _context
 )
 {
 	bool abstract = false;
-	shared_ptr<SymbolicVariable> var;
+	std::shared_ptr<SymbolicVariable> var;
 	frontend::Type const* type = &_type;
 
 	if (auto userType = dynamic_cast<UserDefinedValueType const*>(type))
@@ -240,10 +277,10 @@ pair<bool, shared_ptr<SymbolicVariable>> newSymbolicVariable(
 	if (!isSupportedTypeDeclaration(_type))
 	{
 		abstract = true;
-		var = make_shared<SymbolicIntVariable>(frontend::TypeProvider::uint256(), type, _uniqueName, _context);
+		var = std::make_shared<SymbolicIntVariable>(frontend::TypeProvider::uint256(), type, _uniqueName, _context);
 	}
 	else if (isBool(_type))
-		var = make_shared<SymbolicBoolVariable>(type, _uniqueName, _context);
+		var = std::make_shared<SymbolicBoolVariable>(type, _uniqueName, _context);
 	else if (isFunction(_type))
 	{
 		auto const& fType = dynamic_cast<FunctionType const*>(type);
@@ -262,45 +299,45 @@ pair<bool, shared_ptr<SymbolicVariable>> newSymbolicVariable(
 		)
 		{
 			abstract = true;
-			var = make_shared<SymbolicIntVariable>(TypeProvider::uint256(), type, _uniqueName, _context);
+			var = std::make_shared<SymbolicIntVariable>(TypeProvider::uint256(), type, _uniqueName, _context);
 		}
 		else
-			var = make_shared<SymbolicFunctionVariable>(type, _uniqueName, _context);
+			var = std::make_shared<SymbolicFunctionVariable>(type, _uniqueName, _context);
 	}
 	else if (isInteger(_type))
-		var = make_shared<SymbolicIntVariable>(type, type, _uniqueName, _context);
+		var = std::make_shared<SymbolicIntVariable>(type, type, _uniqueName, _context);
 	else if (isFixedPoint(_type))
-		var = make_shared<SymbolicIntVariable>(type, type, _uniqueName, _context);
+		var = std::make_shared<SymbolicIntVariable>(type, type, _uniqueName, _context);
 	else if (isFixedBytes(_type))
 	{
 		auto fixedBytesType = dynamic_cast<frontend::FixedBytesType const*>(type);
 		solAssert(fixedBytesType, "");
-		var = make_shared<SymbolicFixedBytesVariable>(type, fixedBytesType->numBytes(), _uniqueName, _context);
+		var = std::make_shared<SymbolicFixedBytesVariable>(type, fixedBytesType->numBytes(), _uniqueName, _context);
 	}
 	else if (isAddress(_type) || isContract(_type))
-		var = make_shared<SymbolicAddressVariable>(_uniqueName, _context);
+		var = std::make_shared<SymbolicAddressVariable>(_uniqueName, _context);
 	else if (isEnum(_type))
-		var = make_shared<SymbolicEnumVariable>(type, _uniqueName, _context);
+		var = std::make_shared<SymbolicEnumVariable>(type, _uniqueName, _context);
 	else if (isRational(_type))
 	{
 		auto rational = dynamic_cast<frontend::RationalNumberType const*>(&_type);
 		solAssert(rational, "");
 		if (rational->isFractional())
-			var = make_shared<SymbolicIntVariable>(frontend::TypeProvider::uint256(), type, _uniqueName, _context);
+			var = std::make_shared<SymbolicIntVariable>(frontend::TypeProvider::uint256(), type, _uniqueName, _context);
 		else
-			var = make_shared<SymbolicIntVariable>(type, type, _uniqueName, _context);
+			var = std::make_shared<SymbolicIntVariable>(type, type, _uniqueName, _context);
 	}
 	else if (isMapping(_type) || isArray(_type))
-		var = make_shared<SymbolicArrayVariable>(type, type, _uniqueName, _context);
+		var = std::make_shared<SymbolicArrayVariable>(type, type, _uniqueName, _context);
 	else if (isTuple(_type))
-		var = make_shared<SymbolicTupleVariable>(type, _uniqueName, _context);
+		var = std::make_shared<SymbolicTupleVariable>(type, _uniqueName, _context);
 	else if (isStringLiteral(_type))
 	{
 		auto stringType = TypeProvider::stringMemory();
-		var = make_shared<SymbolicArrayVariable>(stringType, type, _uniqueName, _context);
+		var = std::make_shared<SymbolicArrayVariable>(stringType, type, _uniqueName, _context);
 	}
 	else if (isNonRecursiveStruct(_type))
-		var = make_shared<SymbolicStructVariable>(type, _uniqueName, _context);
+		var = std::make_shared<SymbolicStructVariable>(type, _uniqueName, _context);
 	else
 		solAssert(false, "");
 	return make_pair(abstract, var);
@@ -402,6 +439,9 @@ smtutil::Expression minValue(frontend::IntegerType const& _type)
 
 smtutil::Expression minValue(frontend::Type const* _type)
 {
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(_type))
+		return minValue(&userType->underlyingType());
+
 	solAssert(isNumber(*_type), "");
 	if (auto const* intType = dynamic_cast<IntegerType const*>(_type))
 		return intType->minValue();
@@ -424,6 +464,9 @@ smtutil::Expression maxValue(frontend::IntegerType const& _type)
 
 smtutil::Expression maxValue(frontend::Type const* _type)
 {
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(_type))
+		return maxValue(&userType->underlyingType());
+
 	solAssert(isNumber(*_type), "");
 	if (auto const* intType = dynamic_cast<IntegerType const*>(_type))
 		return intType->maxValue();
@@ -455,17 +498,21 @@ void setSymbolicZeroValue(smtutil::Expression _expr, frontend::Type const* _type
 smtutil::Expression zeroValue(frontend::Type const* _type)
 {
 	solAssert(_type, "");
+
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(_type))
+		return zeroValue(&userType->underlyingType());
+
 	if (isSupportedType(*_type))
 	{
 		if (isNumber(*_type))
-			return 0;
+			return isSigned(_type) ? smtutil::Expression(s256(0)) : smtutil::Expression(static_cast<size_t>(0));
 		if (isBool(*_type))
 			return smtutil::Expression(false);
 		if (isArray(*_type) || isMapping(*_type))
 		{
-			auto tupleSort = dynamic_pointer_cast<TupleSort>(smtSort(*_type));
+			auto tupleSort = std::dynamic_pointer_cast<TupleSort>(smtSort(*_type));
 			solAssert(tupleSort, "");
-			auto sortSort = make_shared<SortSort>(tupleSort->components.front());
+			auto sortSort = std::make_shared<SortSort>(tupleSort->components.front());
 
 			std::optional<smtutil::Expression> zeroArray;
 			auto length = bigint(0);
@@ -483,16 +530,16 @@ smtutil::Expression zeroValue(frontend::Type const* _type)
 			solAssert(zeroArray, "");
 			return smtutil::Expression::tuple_constructor(
 				smtutil::Expression(std::make_shared<SortSort>(tupleSort), tupleSort->name),
-				vector<smtutil::Expression>{*zeroArray, length}
+				std::vector<smtutil::Expression>{*zeroArray, length}
 			);
 
 		}
 		if (isNonRecursiveStruct(*_type))
 		{
 			auto const* structType = dynamic_cast<StructType const*>(_type);
-			auto structSort = dynamic_pointer_cast<TupleSort>(smtSort(*_type));
+			auto structSort = std::dynamic_pointer_cast<TupleSort>(smtSort(*_type));
 			return smtutil::Expression::tuple_constructor(
-				smtutil::Expression(make_shared<SortSort>(structSort), structSort->name),
+				smtutil::Expression(std::make_shared<SortSort>(structSort), structSort->name),
 				applyMap(
 					structType->structDefinition().members(),
 					[](auto var) { return zeroValue(var->type()); }
@@ -507,6 +554,9 @@ smtutil::Expression zeroValue(frontend::Type const* _type)
 
 bool isSigned(frontend::Type const* _type)
 {
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(_type))
+		return isSigned(&userType->underlyingType());
+
 	solAssert(smt::isNumber(*_type), "");
 	bool isSigned = false;
 	if (auto const* numberType = dynamic_cast<RationalNumberType const*>(_type))
@@ -528,8 +578,11 @@ bool isSigned(frontend::Type const* _type)
 	return isSigned;
 }
 
-pair<unsigned, bool> typeBvSizeAndSignedness(frontend::Type const* _type)
+std::pair<unsigned, bool> typeBvSizeAndSignedness(frontend::Type const* _type)
 {
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(_type))
+		return typeBvSizeAndSignedness(&userType->underlyingType());
+
 	if (auto const* intType = dynamic_cast<IntegerType const*>(_type))
 		return {intType->numBits(), intType->isSigned()};
 	else if (auto const* fixedType = dynamic_cast<FixedPointType const*>(_type))
@@ -553,6 +606,10 @@ void setSymbolicUnknownValue(smtutil::Expression _expr, frontend::Type const* _t
 smtutil::Expression symbolicUnknownConstraints(smtutil::Expression _expr, frontend::Type const* _type)
 {
 	solAssert(_type, "");
+
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(_type))
+		return symbolicUnknownConstraints(std::move(_expr), &userType->underlyingType());
+
 	if (isEnum(*_type) || isInteger(*_type) || isAddress(*_type) || isFixedBytes(*_type))
 		return _expr >= minValue(_type) && _expr <= maxValue(_type);
 	else if (
@@ -567,8 +624,11 @@ smtutil::Expression symbolicUnknownConstraints(smtutil::Expression _expr, fronte
 	return smtutil::Expression(true);
 }
 
-optional<smtutil::Expression> symbolicTypeConversion(frontend::Type const* _from, frontend::Type const* _to)
+std::optional<smtutil::Expression> symbolicTypeConversion(frontend::Type const* _from, frontend::Type const* _to)
 {
+	if (auto userType = dynamic_cast<UserDefinedValueType const*>(_to))
+		return symbolicTypeConversion(_from, &userType->underlyingType());
+
 	if (_to && _from)
 		// StringLiterals are encoded as SMT arrays in the generic case,
 		// but they can also be compared/assigned to fixed bytes, in which
@@ -580,10 +640,70 @@ optional<smtutil::Expression> symbolicTypeConversion(frontend::Type const* _from
 					return smtutil::Expression(size_t(0));
 				auto bytesVec = util::asBytes(strType->value());
 				bytesVec.resize(fixedBytesType->numBytes(), 0);
-				return smtutil::Expression(u256(toHex(bytesVec, util::HexPrefix::Add)));
+				return smtutil::Expression(u256(util::toHex(bytesVec, util::HexPrefix::Add)));
 			}
 
 	return std::nullopt;
 }
 
+smtutil::Expression member(smtutil::Expression const& _tuple, std::string const& _member)
+{
+	TupleSort const& _sort = dynamic_cast<TupleSort const&>(*_tuple.sort);
+	return smtutil::Expression::tuple_get(
+		_tuple,
+		_sort.memberToIndex.at(_member)
+	);
+}
+
+smtutil::Expression assignMember(smtutil::Expression const _tuple, std::map<std::string, smtutil::Expression> const& _values)
+{
+	TupleSort const& _sort = dynamic_cast<TupleSort const&>(*_tuple.sort);
+	std::vector<smtutil::Expression> args;
+	for (auto const& m: _sort.members)
+		if (auto* value = util::valueOrNullptr(_values, m))
+			args.emplace_back(*value);
+		else
+			args.emplace_back(member(_tuple, m));
+	auto sortExpr = smtutil::Expression(std::make_shared<smtutil::SortSort>(_tuple.sort), _tuple.name);
+	return smtutil::Expression::tuple_constructor(sortExpr, args);
+}
+
+std::map<std::string, frontend::Type const*> transactionMemberTypes()
+{
+	// TODO: gasleft
+	return {
+		{"block.basefee", TypeProvider::uint256()},
+		{"block.blobbasefee", TypeProvider::uint256()},
+		{"block.chainid", TypeProvider::uint256()},
+		{"block.coinbase", TypeProvider::address()},
+		{"block.prevrandao", TypeProvider::uint256()},
+		{"block.gaslimit", TypeProvider::uint256()},
+		{"block.number", TypeProvider::uint256()},
+		{"block.slotnum", TypeProvider::uint(64)},
+		{"block.timestamp", TypeProvider::uint256()},
+		{"blobhash", TypeProvider::array(DataLocation::Memory, TypeProvider::uint256())},
+		{"blockhash", TypeProvider::array(DataLocation::Memory, TypeProvider::uint256())},
+		{"msg.data", TypeProvider::bytesCalldata()},
+		{"msg.sender", TypeProvider::address()},
+		{"msg.sig", TypeProvider::fixedBytes(4)},
+		{"msg.value", TypeProvider::uint256()},
+		{"tx.gasprice", TypeProvider::uint256()},
+		{"tx.origin", TypeProvider::address()}
+	};
+}
+
+std::map<std::string, SortPointer> transactionMemberSorts()
+{
+	// NOTE: `blockhash` and `blobhash` need proper `ArraySort`, `smtSort()` wraps array types into array+length pair
+	auto toSort = [&](auto const& entry) -> SortPointer
+	{
+		if (entry.first == "blockhash" || entry.first == "blobhash")
+			return std::make_shared<ArraySort>(SortProvider::uintSort, SortProvider::uintSort);
+		return smtSort(*entry.second);
+	};
+	auto types = transactionMemberTypes();
+	return types
+	| ranges::views::transform([&](auto const& entry) { return std::make_pair(entry.first, toSort(entry)); })
+	| ranges::to<std::map<std::string, SortPointer>>();
+}
 }

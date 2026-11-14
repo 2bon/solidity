@@ -9,9 +9,6 @@ contract C {
         c = hex"ff077fff";
     }
 }
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // a() -> 0x20, 11, "hello world"
 // b() -> 0x20, 4, "ABCD"

@@ -55,7 +55,7 @@ public:
 	void appendJumpTo(LabelID _labelId, int _stackDiffAfter, JumpType _jumpType) override;
 	void appendJumpToIf(LabelID _labelId, JumpType _jumpType) override;
 	void appendAssemblySize() override;
-	std::pair<std::shared_ptr<AbstractAssembly>, SubID> createSubAssembly(std::string _name = {}) override;
+	std::pair<std::shared_ptr<AbstractAssembly>, SubID> createSubAssembly(bool _creation, std::string _name = {}) override;
 	void appendDataOffset(std::vector<SubID> const& _subPath) override;
 	void appendDataSize(std::vector<SubID> const& _subPath) override;
 	SubID appendData(bytes const& _data) override;
@@ -67,12 +67,15 @@ public:
 
 	void markAsInvalid() override;
 
+	langutil::EVMVersion evmVersion() const override;
+
+
 private:
 	static LabelID assemblyTagToIdentifier(evmasm::AssemblyItem const& _tag);
 	void appendJumpInstruction(evmasm::Instruction _instruction, JumpType _jumpType);
 
 	evmasm::Assembly& m_assembly;
 	std::map<SubID, u256> m_dataHashBySubId;
-	size_t m_nextDataCounter = std::numeric_limits<size_t>::max() / 2;
+	SubID::ValueType m_nextDataCounter = std::numeric_limits<SubID::ValueType>::max() / 2;
 };
 }

@@ -50,10 +50,6 @@ contract Test {
         return type(HelloWorldDerived).interfaceId;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // hello() -> left(0x19ff1d21)
 // world() -> left(0xdf419679)

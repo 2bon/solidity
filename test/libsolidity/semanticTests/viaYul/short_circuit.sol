@@ -8,9 +8,6 @@ contract C {
         y = x;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // or(uint256): 0 -> true, 0
 // and(uint256): 0 -> true, 8

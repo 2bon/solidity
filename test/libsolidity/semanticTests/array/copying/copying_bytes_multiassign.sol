@@ -16,18 +16,18 @@ contract sender {
     bytes savedData1;
     bytes savedData2;
 }
-// ====
-// compileToEwasm: false
-// compileViaYul: also
 // ----
 // (): 7 ->
-// gas irOptimized: 110954
-// gas legacy: 111082
-// gas legacyOptimized: 111027
+// gas irOptimized: 110732
+// gas legacy: 111388
+// gas legacyOptimized: 111066
+// gas ssaCFGOptimized: 110718
 // val() -> 0
 // forward(bool): true -> true
+// gas irOptimized: 49567
 // val() -> 0x80
 // forward(bool): false -> true
+// gas irOptimized: 31405
 // val() -> 0x80
 // forward(bool): true -> true
 // val() -> 0x80

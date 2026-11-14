@@ -6,8 +6,6 @@ contract Test {
     }
 }
 // ====
-// compileViaYul: also
-// compileToEwasm: false
 // EVMVersion: >=homestead
 // ----
 // library: Lib

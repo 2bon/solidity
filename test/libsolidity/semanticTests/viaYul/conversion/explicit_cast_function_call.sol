@@ -6,8 +6,5 @@ contract C {
         x = f(bytes4(uint32(0x12345678)));
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // g() -> 0x1234567800000000000000000000000000000000000000000000000000000000

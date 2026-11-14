@@ -9,11 +9,10 @@ contract C {
         emit ev0(x);
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // constructor() ->
 // ~ emit ev0(bytes1): #"1"
-// gas legacy: 168735
+// gas legacy: 58919
+// gas legacy code: 33600
 // j() ->
 // ~ emit ev0(bytes1): #"1"

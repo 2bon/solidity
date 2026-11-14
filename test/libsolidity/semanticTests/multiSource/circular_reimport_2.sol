@@ -12,8 +12,5 @@ contract C {
     return 10000 + f() - g() - h();
   }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // foo() -> 0x2324

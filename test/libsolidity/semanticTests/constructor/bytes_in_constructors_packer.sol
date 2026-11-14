@@ -22,10 +22,13 @@ contract Creator {
         ch = c.part(x);
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // f(uint256,bytes): 7, 0x40, 78, "abcdefghijklmnopqrstuvwxyzabcdef", "ghijklmnopqrstuvwxyzabcdefghijkl", "mnopqrstuvwxyz" -> 7, "h"
-// gas irOptimized: 300765
-// gas legacy: 428917
-// gas legacyOptimized: 298128
+// gas irOptimized: 169288
+// gas irOptimized code: 99400
+// gas legacy: 172946
+// gas legacy code: 239800
+// gas legacyOptimized: 169823
+// gas legacyOptimized code: 118600
+// gas ssaCFGOptimized: 169271
+// gas ssaCFGOptimized code: 100400

@@ -3,8 +3,8 @@ Layout of a Solidity Source File
 ********************************
 
 Source files can contain an arbitrary number of
-:ref:`contract definitions<contract_structure>`, import_ directives,
-:ref:`pragma directives<pragma>` and
+:ref:`contract definitions<contract_structure>`, import_ ,
+:ref:`pragma<pragma>` and :ref:`using for<using-for>` directives and
 :ref:`struct<structs>`, :ref:`enum<enums>`, :ref:`function<functions>`, :ref:`error<errors>`
 and :ref:`constant variable<constants>` definitions.
 
@@ -40,7 +40,7 @@ The comment is recognized by the compiler anywhere in the file at the
 file level, but it is recommended to put it at the top of the file.
 
 More information about how to use SPDX license identifiers
-can be found at the `SPDX website <https://spdx.org/ids-how>`_.
+can be found at the `SPDX website <https://spdx.dev/learn/handling-license-info/#how>`_.
 
 
 .. index:: ! pragma
@@ -56,7 +56,7 @@ you have to add the pragma to all your files if you want to enable it
 in your whole project. If you :ref:`import<import>` another file, the pragma
 from that file does *not* automatically apply to the importing file.
 
-.. index:: ! pragma, version
+.. index:: ! pragma;version
 
 .. _version_pragma:
 
@@ -91,6 +91,9 @@ these follow the same syntax used by `npm <https://docs.npmjs.com/cli/v6/using-n
   required by the pragma. If it does not match, the compiler issues
   an error.
 
+.. index:: ! ABI coder, ! pragma; abicoder, pragma; ABIEncoderV2
+.. _abi_coder:
+
 ABI Coder Pragma
 ----------------
 
@@ -98,12 +101,15 @@ By using ``pragma abicoder v1`` or ``pragma abicoder v2`` you can
 select between the two implementations of the ABI encoder and decoder.
 
 The new ABI coder (v2) is able to encode and decode arbitrarily nested
-arrays and structs. It might produce less optimal code and has not
-received as much testing as the old encoder, but is considered
-non-experimental as of Solidity 0.6.0. You still have to explicitly
-activate it using ``pragma abicoder v2;``. Since it will be
-activated by default starting from Solidity 0.8.0, there is the option to select
-the old coder using ``pragma abicoder v1;``.
+arrays and structs. Apart from supporting more types, it involves more extensive
+validation and safety checks, which may result in higher gas costs, but also heightened
+security.
+It is considered non-experimental as of Solidity 0.6.0 and it is enabled by default starting
+with Solidity 0.8.0. The old ABI coder can still be selected using ``pragma abicoder v1;``.
+
+.. warning::
+  The ABI coder v1 is deprecated and scheduled for removal.
+  Use ABI coder v2 instead.
 
 The set of types supported by the new encoder is a strict superset of
 the ones supported by the old one. Contracts that use it can interact with ones
@@ -126,8 +132,7 @@ enough to make the error go away.
   by using ``pragma experimental ABIEncoderV2``, but it was not possible
   to explicitly select coder v1 because it was the default.
 
-.. index:: ! pragma, experimental
-
+.. index:: ! pragma; experimental
 .. _experimental_pragma:
 
 Experimental Pragma
@@ -137,6 +142,7 @@ The second pragma is the experimental pragma. It can be used to enable
 features of the compiler or language that are not yet enabled by default.
 The following experimental pragmas are currently supported:
 
+.. index:: ! pragma; ABIEncoderV2
 
 ABIEncoderV2
 ~~~~~~~~~~~~
@@ -145,19 +151,11 @@ Because the ABI coder v2 is not considered experimental anymore,
 it can be selected via ``pragma abicoder v2`` (please see above)
 since Solidity 0.7.4.
 
+.. index:: ! pragma; SMTChecker
 .. _smt_checker:
 
 SMTChecker
 ~~~~~~~~~~
-
-This component has to be enabled when the Solidity compiler is built
-and therefore it is not available in all Solidity binaries.
-The :ref:`build instructions<smt_solvers_build>` explain how to activate this option.
-It is activated for the Ubuntu PPA releases in most versions,
-but not for the Docker images, Windows binaries or the
-statically-built Linux binaries. It can be activated for solc-js via the
-`smtCallback <https://github.com/ethereum/solc-js#example-usage-with-smtsolver-callback>`_ if you have an SMT solver
-installed locally and run solc-js via node (not via the browser).
 
 If you use ``pragma experimental SMTChecker;``, then you get additional
 :ref:`safety warnings<formal_verification>` which are obtained by querying an
@@ -165,6 +163,11 @@ SMT solver.
 The component does not yet support all features of the Solidity language and
 likely outputs many warnings. In case it reports unsupported features, the
 analysis may not be fully sound.
+
+.. note::
+
+    The ``SMTChecker`` pragma is deprecated and will be removed.
+    To enable SMTChecker, simply select :ref:`select an engine<smtchecker_engines>` when invoking the compiler.
 
 .. index:: source file, ! import, module, source unit
 
@@ -179,7 +182,7 @@ Syntax and Semantics
 Solidity supports import statements to help modularise your code that
 are similar to those available in JavaScript
 (from ES6 on). However, Solidity does not support the concept of
-a `default export <https://developer.mozilla.org/en-US/docs/web/javascript/reference/statements/export#Description>`_.
+a `default export <https://developer.mozilla.org/en-US/docs/web/javascript/reference/statements/export#description>`_.
 
 At a global level, you can use import statements of the following form:
 

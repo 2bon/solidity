@@ -56,20 +56,11 @@ public:
 	/// @returns true iff all checks passed. Note even if all checks passed, errors() can still contain warnings
 	bool checkTypeRequirements(SourceUnit const& _source);
 
-	/// @returns the type of an expression and asserts that it is present.
-	Type const* type(Expression const& _expression) const;
-	/// @returns the type of the given variable and throws if the type is not present
-	/// (this can happen for variables with non-explicit types before their types are resolved)
-	Type const* type(VariableDeclaration const& _variable) const;
-
 	static bool typeSupportedByOldABIEncoder(Type const& _type, bool _isLibraryCall);
 
 private:
 
 	bool visit(ContractDefinition const& _contract) override;
-	/// Checks (and warns) if a tuple assignment might cause unexpected overwrites in storage.
-	/// Should only be called if the left hand side is tuple-typed.
-	void checkDoubleStorageAssignment(Assignment const& _assignment);
 	// Checks whether the expression @arg _expression can be assigned from type @arg _type
 	// and reports an error, if not.
 	void checkExpressionAssignment(Type const& _type, Expression const& _expression);
@@ -124,6 +115,10 @@ private:
 		FunctionCall const& _functionCall,
 		FunctionType const* _functionType
 	);
+
+	void typeCheckERC7201Builtin(FunctionCall const& _functionCall, FunctionType const* _functionType);
+
+	bool visit(ImportDirective const&) override;
 
 	void endVisit(InheritanceSpecifier const& _inheritance) override;
 	void endVisit(ModifierDefinition const& _modifier) override;
@@ -181,7 +176,7 @@ private:
 	/// convertible to @a _expectedType.
 	bool expectType(Expression const& _expression, Type const& _expectedType);
 	/// Runs type checks on @a _expression to infer its type and then checks that it is an LValue.
-	void requireLValue(Expression const& _expression, bool _ordinaryAssignment);
+	void requireLValue(Expression const& _expression);
 
 	bool useABICoderV2() const;
 
@@ -194,6 +189,29 @@ private:
 		else
 			return m_currentSourceUnit;
 	}
+
+	// MemberAccess visitor helpers:
+
+	/// Resolves overloaded functions by filtering out inapplicable candidates based on the provided arguments
+	/// and the type of the owning object.
+	/// Reports an error in case of ambiguity or failure to resolve.
+	MemberList::Member resolveOverloads(MemberAccess const& _memberAccess) const;
+
+	/// Uses heuristics to determine the cause of unresolved member access and
+	/// produce a more specific and helpful error.
+	/// @param _memberAccess The member access expression where the unresolved member access occurred.
+	/// @param _possibleMemberCountBeforeOverloading The initial count of possible members before overloading resolution.
+	/// @returns error ID and error message.
+	std::pair<langutil::ErrorId, std::string> diagnoseUnresolvedMemberAccess(
+		MemberAccess const& _memberAccess,
+		size_t _possibleMemberCountBeforeOverloading
+	) const;
+
+	/// Validates access to a member function of a given type, ensuring that the invocation
+	/// is consistent with the expected types and semantics. Reports errors and warnings
+	/// for invalid access, use of deprecated features, and unsupported operations.
+	/// @param _memberAccess Member access expression.
+	void checkAccessedMemberFunction(MemberAccess const& _memberAccess) const;
 
 	SourceUnit const* m_currentSourceUnit = nullptr;
 	ContractDefinition const* m_currentContract = nullptr;

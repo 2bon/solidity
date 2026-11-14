@@ -27,9 +27,5 @@ contract Test {
         s.z = z;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // test() -> 1, 2, 3

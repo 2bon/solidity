@@ -3,10 +3,15 @@ set(sources
 	Common.h
 	CharStream.cpp
 	CharStream.h
+	CodeSizeLimits.cpp
+	CodeSizeLimits.h
+	DebugData.h
 	DebugInfoSelection.cpp
 	DebugInfoSelection.h
 	ErrorReporter.cpp
 	ErrorReporter.h
+	EthdebugSchema.cpp
+	EthdebugSchema.h
 	EVMVersion.h
 	EVMVersion.cpp
 	Exceptions.cpp
@@ -26,7 +31,6 @@ set(sources
 	SourceReferenceFormatter.h
 	Token.cpp
 	Token.h
-	UndefMacros.h
 	UniqueErrorReporter.h
 )
 

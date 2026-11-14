@@ -1,29 +1,9 @@
-contract Other {
+contract C {
     constructor() payable {
-    }
-    function getAddress() public returns (address) {
-        return address(this);
+        payable(address(0x1234)).transfer(500);
     }
 }
-contract ClientReceipt {
-    Other other;
-    constructor() payable {
-        other = new Other{value:500}();
-    }
-    function getAddress() public returns (address) {
-        return other.getAddress();
-    }
-}
-// ====
-// compileViaYul: also
 // ----
 // constructor(), 2000 wei ->
-// gas irOptimized: 184076
-// gas legacy: 235195
-// gas legacyOptimized: 176766
 // balance -> 1500
-// gas irOptimized: 191881
-// gas legacy: 235167
-// gas legacyOptimized: 180756
-// getAddress() -> 0xf01f7809444bd9a93a854361c6fae3f23d9e23db
-// balance: 0xf01f7809444bd9a93a854361c6fae3f23d9e23db -> 500
+// balance: 0x0000000000000000000000000000000000001234 -> 500

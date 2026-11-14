@@ -7,4 +7,5 @@ contract Test {
         return type(A).creationCode;
     }
 }
+// ====
 // ----

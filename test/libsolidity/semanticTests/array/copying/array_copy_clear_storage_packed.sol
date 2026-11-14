@@ -38,15 +38,13 @@ contract C {
         return x2[1];
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // f() -> 0
-// gas irOptimized: 92800
-// gas legacy: 93006
-// gas legacyOptimized: 92261
+// gas irOptimized: 74041
+// gas legacy: 75528
+// gas legacyOptimized: 73861
 // g() -> 0
 // h() -> 0
-// gas irOptimized: 92862
-// gas legacy: 93028
-// gas legacyOptimized: 92303
+// gas irOptimized: 74112
+// gas legacy: 75553
+// gas legacyOptimized: 73904

@@ -15,12 +15,9 @@ contract c {
         return data2.a == data1.a && data2.b == data1.b;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // test() -> true
-// gas irOptimized: 110186
-// gas legacy: 110627
-// gas legacyOptimized: 109706
+// gas irOptimized: 109918
+// gas legacy: 110615
+// gas legacyOptimized: 109705
+// gas ssaCFGOptimized: 109914

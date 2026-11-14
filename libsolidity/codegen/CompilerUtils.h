@@ -115,6 +115,9 @@ public:
 	/// Dynamic version of @see storeInMemory, expects the memory offset below the value on the stack
 	/// and also updates that. For reference types, only copies the data pointer. Fails for
 	/// non-memory-references. For string literals no value is available on the stack.
+	/// CAUTION: Even with @a _padToWords set to false, this may write a full 32-byte word and only
+	/// advance the offset by the unpadded size, i.e., up to 31 bytes past the reported end of the
+	/// stored value are overwritten.
 	/// @param _padToWords if true, adds zeros to pad to multiple of 32 bytes. Array elements
 	///                    are always padded (except for byte arrays), regardless of this parameter.
 	/// @param _cleanup if true, adds code to cleanup the value before storing it.
@@ -299,7 +302,7 @@ public:
 	/// Appends code that copies the code of the given contract to memory.
 	/// Stack pre: Memory position
 	/// Stack post: Updated memory position
-	/// @param creation if true, copies creation code, if false copies runtime code.
+	/// @param _creationCode if true, copies creation code, if false copies runtime code.
 	/// @note the contract has to be compiled already, so beware of cyclic dependencies!
 	void copyContractCodeToMemory(ContractDefinition const& contract, bool _creationCode);
 

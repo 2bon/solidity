@@ -14,5 +14,6 @@ contract D {
 // ====
 // SMTEngine: all
 // ----
-// Warning 4588: (78-85): Assertion checker does not yet implement this type of function call.
+// Warning 8729: (78-85): Contract deployment is only supported in the trusted mode for external calls with the CHC engine.
 // Warning 6328: (133-152): CHC: Assertion violation happens here.\nCounterexample:\n\n\nTransaction trace:\nD.constructor()\nD.f()\n    test() -- internal call\n        (new C()).x() -- untrusted external call
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

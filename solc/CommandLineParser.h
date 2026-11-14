@@ -24,8 +24,9 @@
 #include <libsolidity/interface/DebugSettings.h>
 #include <libsolidity/interface/FileReader.h>
 #include <libsolidity/interface/ImportRemapper.h>
+#include <libsolidity/interface/OptimiserSettings.h>
 
-#include <libyul/AssemblyStack.h>
+#include <libyul/YulStack.h>
 
 #include <liblangutil/DebugInfoSelection.h>
 #include <liblangutil/EVMVersion.h>
@@ -56,13 +57,13 @@ enum class InputMode
 	StandardJson,
 	Linker,
 	Assembler,
-	LanguageServer
+	EVMAssemblerJSON
 };
 
 struct CompilerOutputs
 {
-	bool operator!=(CompilerOutputs const& _other) const noexcept { return !(*this == _other); }
-	bool operator==(CompilerOutputs const& _other) const noexcept;
+	bool operator!=(CompilerOutputs const& _other) const noexcept = default;
+	bool operator==(CompilerOutputs const& _other) const noexcept = default;
 	friend std::ostream& operator<<(std::ostream& _out, CompilerOutputs const& _requests);
 
 	static std::string const& componentName(bool CompilerOutputs::* _component);
@@ -77,14 +78,19 @@ struct CompilerOutputs
 			{"bin-runtime", &CompilerOutputs::binaryRuntime},
 			{"abi", &CompilerOutputs::abi},
 			{"ir", &CompilerOutputs::ir},
+			{"ir-ast-json", &CompilerOutputs::irAstJson},
 			{"ir-optimized", &CompilerOutputs::irOptimized},
-			{"ewasm", &CompilerOutputs::ewasm},
-			{"ewasm-ir", &CompilerOutputs::ewasmIR},
+			{"ir-optimized-ast-json", &CompilerOutputs::irOptimizedAstJson},
 			{"hashes", &CompilerOutputs::signatureHashes},
 			{"userdoc", &CompilerOutputs::natspecUser},
 			{"devdoc", &CompilerOutputs::natspecDev},
 			{"metadata", &CompilerOutputs::metadata},
 			{"storage-layout", &CompilerOutputs::storageLayout},
+			{"transient-storage-layout", &CompilerOutputs::transientStorageLayout},
+			{"ethdebug-resources", &CompilerOutputs::ethdebugResources},
+			{"ethdebug-compilation", &CompilerOutputs::ethdebugCompilation},
+			{"ethdebug-program", &CompilerOutputs::ethdebugProgram},
+			{"ethdebug-program-runtime", &CompilerOutputs::ethdebugProgramRuntime},
 		};
 		return components;
 	}
@@ -97,20 +103,25 @@ struct CompilerOutputs
 	bool binaryRuntime = false;
 	bool abi = false;
 	bool ir = false;
+	bool irAstJson = false;
 	bool irOptimized = false;
-	bool ewasm = false;
-	bool ewasmIR = false;
+	bool irOptimizedAstJson = false;
 	bool signatureHashes = false;
 	bool natspecUser = false;
 	bool natspecDev = false;
 	bool metadata = false;
 	bool storageLayout = false;
+	bool transientStorageLayout = false;
+	bool ethdebugResources = false;
+	bool ethdebugCompilation = false;
+	bool ethdebugProgram = false;
+	bool ethdebugProgramRuntime = false;
 };
 
 struct CombinedJsonRequests
 {
-	bool operator!=(CombinedJsonRequests const& _other) const noexcept { return !(*this == _other); }
-	bool operator==(CombinedJsonRequests const& _other) const noexcept;
+	bool operator!=(CombinedJsonRequests const& _other) const noexcept = default;
+	bool operator==(CombinedJsonRequests const& _other) const noexcept = default;
 	friend std::ostream& operator<<(std::ostream& _out, CombinedJsonRequests const& _requests);
 
 	static std::string const& componentName(bool CombinedJsonRequests::* _component);
@@ -124,6 +135,7 @@ struct CombinedJsonRequests
 			{"opcodes", &CombinedJsonRequests::opcodes},
 			{"asm", &CombinedJsonRequests::asm_},
 			{"storage-layout", &CombinedJsonRequests::storageLayout},
+			{"transient-storage-layout", &CombinedJsonRequests::transientStorageLayout},
 			{"generated-sources", &CombinedJsonRequests::generatedSources},
 			{"generated-sources-runtime", &CombinedJsonRequests::generatedSourcesRuntime},
 			{"srcmap", &CombinedJsonRequests::srcMap},
@@ -145,6 +157,7 @@ struct CombinedJsonRequests
 	bool opcodes = false;
 	bool asm_ = false;
 	bool storageLayout = false;
+	bool transientStorageLayout = false;
 	bool generatedSources = false;
 	bool generatedSourcesRuntime = false;
 	bool srcMap = false;
@@ -159,13 +172,16 @@ struct CombinedJsonRequests
 
 struct CommandLineOptions
 {
-	bool operator==(CommandLineOptions const& _other) const noexcept;
-	bool operator!=(CommandLineOptions const& _other) const noexcept { return !(*this == _other); }
+	bool operator==(CommandLineOptions const& _other) const noexcept = default;
+	bool operator!=(CommandLineOptions const& _other) const noexcept = default;
 
 	OptimiserSettings optimiserSettings() const;
 
-	struct
+	struct Input
 	{
+		bool operator==(Input const&) const noexcept = default;
+		bool operator!=(Input const&) const noexcept = default;
+
 		InputMode mode = InputMode::Compiler;
 		std::set<boost::filesystem::path> paths;
 		std::vector<ImportRemapper::Remapping> remappings;
@@ -174,64 +190,91 @@ struct CommandLineOptions
 		std::vector<boost::filesystem::path> includePaths;
 		FileReader::FileSystemPathSet allowedDirectories;
 		bool ignoreMissingFiles = false;
-		bool errorRecovery = false;
+		bool noImportCallback = false;
 	} input;
 
-	struct
+	struct Output
 	{
+		bool operator==(Output const&) const noexcept = default;
+		bool operator!=(Output const&) const noexcept = default;
+
 		boost::filesystem::path dir;
 		bool overwriteFiles = false;
 		langutil::EVMVersion evmVersion;
-		bool experimentalViaIR = false;
+		bool viaIR = false;
+		bool viaSSACFG = false;
 		RevertStrings revertStrings = RevertStrings::Default;
 		std::optional<langutil::DebugInfoSelection> debugInfoSelection;
 		CompilerStack::State stopAfter = CompilerStack::State::CompilationSuccessful;
 	} output;
 
-	struct
+	struct Assembly
 	{
-		yul::AssemblyStack::Machine targetMachine = yul::AssemblyStack::Machine::EVM;
-		yul::AssemblyStack::Language inputLanguage = yul::AssemblyStack::Language::StrictAssembly;
+		bool operator==(Assembly const&) const noexcept = default;
+		bool operator!=(Assembly const&) const noexcept = default;
+
+		yul::YulStack::Machine targetMachine = yul::YulStack::Machine::EVM;
 	} assembly;
 
-	struct
+	struct Linker
 	{
+		bool operator==(Linker const&) const noexcept = default;
+		bool operator!=(Linker const&) const noexcept = default;
+
 		std::map<std::string, util::h160> libraries; // library name -> address
 	} linker;
 
-	struct
+	struct Formatting
 	{
+		bool operator==(Formatting const&) const noexcept = default;
+		bool operator!=(Formatting const&) const noexcept = default;
+
 		util::JsonFormat json;
 		std::optional<bool> coloredOutput;
 		bool withErrorIds = false;
 	} formatting;
 
-	struct
+	struct Compiler
 	{
+		bool operator==(Compiler const&) const noexcept = default;
+		bool operator!=(Compiler const&) const noexcept = default;
+
 		CompilerOutputs outputs;
 		bool estimateGas = false;
 		std::optional<CombinedJsonRequests> combinedJsonRequests;
 	} compiler;
 
-	struct
+	struct Metadata
 	{
+		bool operator==(Metadata const&) const noexcept = default;
+		bool operator!=(Metadata const&) const noexcept = default;
+
+		CompilerStack::MetadataFormat format = CompilerStack::defaultMetadataFormat();
 		CompilerStack::MetadataHash hash = CompilerStack::MetadataHash::IPFS;
 		bool literalSources = false;
 	} metadata;
 
-	struct
+	struct Optimizer
 	{
-		bool enabled = false;
-		std::optional<unsigned> expectedExecutionsPerDeployment;
-		bool noOptimizeYul = false;
+		bool operator==(Optimizer const&) const noexcept = default;
+		bool operator!=(Optimizer const&) const noexcept = default;
+
+		bool optimizeEvmasm = false;
+		bool optimizeYul = false;
+		std::optional<OptimiserSettings::ExecutionCount> expectedExecutionsPerDeployment;
 		std::optional<std::string> yulSteps;
 	} optimizer;
 
-	struct
+	struct ModelChecker
 	{
+		bool operator==(ModelChecker const&) const noexcept = default;
+		bool operator!=(ModelChecker const&) const noexcept = default;
+
 		bool initialize = false;
 		ModelCheckerSettings settings;
 	} modelChecker;
+
+	bool experimental = false;
 };
 
 /// Parses the command-line arguments and produces a filled-out CommandLineOptions structure.
@@ -245,6 +288,9 @@ public:
 	void parse(int _argc, char const* const* _argv);
 
 	CommandLineOptions const& options() const { return m_options; }
+
+	/// yields CLI option names (without leading "--") that require --experimental.
+	static std::vector<std::string> const& experimentalOptionNames();
 
 	static void printHelp(std::ostream& _out) { _out << optionsDescription(); }
 
@@ -282,7 +328,11 @@ private:
 
 	void parseOutputSelection();
 
+	/// Returns a list of enabled options from @_optionList
+	std::vector<std::string> enabledOptions(std::vector<std::string> const& _optionList) const;
+
 	void checkMutuallyExclusive(std::vector<std::string> const& _optionNames);
+	void checkExperimental(std::vector<std::string> const& _optionNames) const;
 	size_t countEnabledOptions(std::vector<std::string> const& _optionNames) const;
 	static std::string joinOptionNames(std::vector<std::string> const& _optionNames, std::string _separator = ", ");
 
@@ -293,4 +343,4 @@ private:
 	boost::program_options::variables_map m_args;
 };
 
-}
+} // namespace solidity::frontend

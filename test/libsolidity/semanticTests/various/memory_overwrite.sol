@@ -5,9 +5,5 @@ contract C {
         x[0] = 0x62;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 0x20, 5, "b23a5"

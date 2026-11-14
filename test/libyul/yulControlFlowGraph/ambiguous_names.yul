@@ -14,6 +14,7 @@
     function b() {}
   }
 }
+// ====
 // ----
 // digraph CFG {
 // nodesep=0.7;

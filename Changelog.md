@@ -1,12 +1,678 @@
-### 0.8.13 (unreleased)
+### 0.8.39 (unreleased)
 
 Language Features:
 
-
 Compiler Features:
-* JSON-AST: Added selector field for errors and events.
+* Commandline Interface: Omit the compilation record from `--ethdebug-resources` (experimental).
+* ethdebug: Stamp the `ethdebug/format/program` and `ethdebug/format/info/resources` outputs with their schema and the version of the ethdebug/format specification they follow (experimental).
+* ethdebug: Populate the type and pointer tables of `ethdebug/format/info/resources` with type documents and layout-specific pointer templates for storage, transient storage, memory and calldata (experimental).
+* EVM: Warn about exceeding the increased contract code size (64 KiB) and initcode size (128 KiB) limits instead of the EIP-170 and EIP-3860 limits when compiling for the Amsterdam EVM version ([EIP-7954](https://eips.ethereum.org/EIPS/eip-7954)).
+* Standard JSON Interface: Omit the compilation record from `ethdebug.resources` (experimental).
+* Yul: Warn when the assembled bytecode of a compiled Yul object exceeds the EIP-170 (runtime code) or EIP-3860 (initcode) size limit, matching the existing warnings for Solidity input.
 
 Bugfixes:
+* SMTChecker: Fix false negative in CHC engine when a function from abstract base is called externally using `this`.
+* SMTChecker: Fix empty tuples being printed as an undeclared constant in SMT-LIB queries, which made the solver reject every query of the affected contract.
+
+
+### 0.8.38 (2026-10-22)
+
+Important Bugfixes:
+* Yul Optimizer: Fix knowledge about storage/memory address relations going stale in the `DataFlowAnalyzer` after a variable is reassigned in Yul, which could cause `LoadResolver` to replace loads with outdated values and `EqualStoreEliminator` to remove needed stores.
+
+Compiler Features:
+* Commandline Interface: Remove the experimental `--yul-cfg-json` output.
+* Commandline Interface: Selecting an ethdebug output no longer implicitly enables the `ethdebug` and `ast-id` components of `--debug-info`; without `ethdebug` in the selection the `--ethdebug-program` and `--ethdebug-program-runtime` outputs carry no semantic debug info.
+* Standard JSON Interface: Remove the experimental `yulCFGJson` output.
+* Standard JSON Interface: Selecting an ethdebug output no longer implicitly enables the `ethdebug` and `ast-id` components of `settings.debug.debugInfo`; without `ethdebug` in the selection the `evm.bytecode.ethdebug` and `evm.deployedBytecode.ethdebug` outputs carry no semantic debug info.
+* Yul Analyzer: Warn about `swapn`, `dupn` and `exchange` being used as identifiers, since they are going to be reserved identifiers starting from the Amsterdam EVM version.
+* Yul IR Code Generation: Use `gt(calldatasize(), 3)` instead of `iszero(lt(calldatasize(), 4))` in the external dispatch routine of IR codegen, saving one instruction per external call.
+* Yul Optimizer: Improve performance of `DataFlowAnalyzer` using flat hash containers.
+
+Bugfixes:
+* EVM Assembly Import: Fix target EVM version being ignored when assembling imported experimental EVM assembly JSON.
+* Parser: Fix inverted version pragma range comparison for components in the range [2**31, 2**32).
+* Yul Parser: Fix `@use-src` source indices that are not decimal numbers being silently truncated instead of rejected.
+
+Build System:
+* Switch from C++20 to C++23 as the target standard.
+* Update emscripten to version 3.1.54.
+* Update minimum version requirement of Clang to 19.1.1.
+
+Solc-Js:
+* The wrapper now requires at least nodejs v16.
+
+
+### 0.8.37 (2026-09-10)
+
+Important Bugfixes:
+* Code Generator: Fix `delete` applied to an element of a `bytes` array in memory zeroing the whole 32-byte word starting at the element's location instead of only the element's byte.
+* Yul IR Code Generation: Encode custom error named parameters in declaration order instead of call-site order when used from a `require` function.
+* Yul Optimizer: Fix too few memory slots being reserved when moving local variables to memory to work around stack-too-deep errors in code containing mutually recursive functions. Variables of two functions that can be active at the same time could be assigned the same slot, silently overwriting one of them while it was still in use.
+
+Language Features:
+* Custom Storage Layout: Allow signed positive expressions.
+* EVM: Support `block.slotnum` to access the beacon chain slot number of the current block, available since the Amsterdam EVM version ([EIP-7843](https://eips.ethereum.org/EIPS/eip-7843)).
+* Yul: Introduce builtin `slotnum()` for the `SLOTNUM` opcode, available since the Amsterdam EVM version ([EIP-7843](https://eips.ethereum.org/EIPS/eip-7843)).
+
+Compiler Features:
+* Commandline Interface: Remove support for the experimental Language Server Protocol (LSP) mode.
+* EVM: Deprecate support for "constantinople", "petersburg", "istanbul" and "berlin" EVM versions.
+* Evmasm Optimizer: Improve performance of block deduplicator.
+* General: Improve performance throughout the compiler using Boost's flat versions of unordered set and map.
+* General: Remove support for the experimental Generic Solidity prototype (`pragma experimental solidity`).
+* General: Replace the current greedy stack shuffler in the experimental SSA CFG pipeline with a planning one.
+* SMTChecker: Emit a deprecation warning for the BMC engine.
+* SMTChecker: Support `block.slotnum`.
+* Yul Optimizer: `LoopInvariantCodeMotion` can now move expressions depending on function parameters out of loops.
+* Yul Optimizer: `UnusedStoreEliminator` can now recognize redundant memory and storage operations whose start offset or length is a function parameter.
+* Yul Optimizer: Remove the ineffective elimination of unused `returndatacopy()` operations in simple cases from UnusedStoreEliminator.
+
+Bugfixes:
+* Code Generator: Fix constants read in both checked and `unchecked` contexts within one contract getting the checked/unchecked semantics of whichever read was generated first via IR, which could remove a required overflow panic or introduce a spurious one.
+* Code Generator: Fix ICE on parenthesized custom error construction in require statement.
+* Code Generator: Fix uninitialized internal function pointers being read from a packed storage slot with the wrong value when a subsequent variable in the slot holds a non-zero value.
+* Commandline Interface: Reject `--model-checker-ext-calls` in unsupported input modes instead of silently ignoring it.
+* Commandline Interface: Report proper error instead of ICE on non-hex mixed-case address value given via `--libraries`.
+* Standard JSON Interface: Fix the entire output being replaced by a `JSONError` ("Error writing output JSON.") when an error message quotes a long source line and truncating it splits a multi-byte character.
+* Type Checker: Report an unimplemented feature error instead of ICE when a variable of a fixed point type is accessed in inline assembly.
+* Yul Optimizer: Fix incorrect removal of `returndatacopy()` operations referencing a stale result of `returndatasize()`.
+
+Build System:
+* Update minimum version requirement of Boost to 1.83.0 for Windows build. This matches the minimum version for other systems.
+
+
+### 0.8.36 (2026-07-09)
+
+Important Bugfixes:
+* PostTypeContractLevelChecker: Fix unintentional reversal of `linearizedBaseContracts` annotation when emitting the warning about the base slot of storage layout being too close to the end of storage. The reversal would affect analysis and code generation dependent on the inheritance order.
+* Yul Optimizer: Fix call graph cycle detection failing to classify some mutually recursive functions as recursive.
+
+Compiler Features:
+* Commandline Interface: `--optimize-runs` now also accepts values from the interval [INT64_MAX, UINT64_MAX].
+* EVM: Support for the EVM version "Amsterdam".
+* General: Remove support for the experimental EOF (EVM Object Format) backend.
+* General: Speed up SHA-256 hashing (`picosha2`).
+* General: The experimental SSA CFG codegen can now spill stack values to memory to avoid stack-too-deep errors.
+
+Bugfixes:
+* Constant Evaluator: Fix ICE when evaluating `erc7201` builtin with wrong number of arguments.
+* Custom Storage Layout: Fix segfault when emitting the "too close to end of storage" warning for contracts with no storage variables.
+* NatSpec: Disallow `@return` tag in event documentation.
+* SMTChecker: Fix incorrect handling of constant operands of unary operations.
+* Standard JSON Interface: Fix incorrect serialization of `optimizer.runs` setting for values in the interval [INT64_MAX, UINT64_MAX].
+
+
+### 0.8.35 (2026-04-29)
+
+Language Features:
+* General: Add a builtin that computes the base slot of a storage namespace using the `erc7201` formula from ERC-7201.
+* Name Resolver: Warn about identifiers selected for future promotion to Solidity or Yul keywords (`at`, `error`, `layout`, `leave`, `super`, `transient`, `this`).
+* Yul Analyzer: Warn about identifiers selected for future promotion to Yul keywords and reserved identifiers (`basefee`, `blobbasefee`, `blobhash`, `clz`, `leave`, `memoryguard`, `mcopy`, `prevrandao`, `tload`, `tstore`).
+
+Compiler Features:
+* Commandline Interface: Disallow selecting the deprecated assembly input mode that was only accessible via `--assemble` instead of treating it as equivalent to `--strict-assembly`.
+* Commandline Interface: Introduce `--experimental` flag required for enabling the experimental mode.
+* Commandline Interface: Replace the experimental `--ethdebug` and `--ethdebug-runtime` outputs with the more granular `--ethdebug-resources`, `--ethdebug-compilation`, `--ethdebug-program` and `--ethdebug-program-runtime`. Producing `ethdebug/format/info/resources` no longer forces full binary compilation.
+* EVM: Introduce experimental EVM version `@future`.
+* General: Improve performance of sanity checks throughout the compiler implementation.
+* General: Introduce the SSA CFG codegen (experimental).
+* General: Restrict the existing experimental features (`generic-solidity`, `lsp`, `ethdebug`, `eof`, `evm`, `ast-import`, `evmasm-import`, `ir-ast`, `ssa-cfg`) to experimental mode.
+* Metadata: Store the state of the experimental mode in JSON and CBOR metadata. In CBOR this broadens the meaning of the existing `experimental` field, which used to indicate only the presence of certain experimental pragmas in the source.
+* Standard JSON Interface: Introduce `settings.experimental` setting required for enabling the experimental mode.
+* Standard JSON Interface: Replace the experimental top-level `ethdebug` output with `ethdebug.resources` and `ethdebug.compilation`. Decouple ethdebug outputs from binary compilation so that requesting the `ethdebug/format/info/resources` schema artifacts does not trigger bytecode generation.
+* Yul Optimizer: Improve performance of control flow side effects collector and function references resolver.
+
+Bugfixes:
+* Yul: Fix incorrect serialization of Yul object names containing double quotes and escape sequences, producing output that could not be parsed as valid Yul.
+* Yul EVM Code Transform: Improve stack shuffler performance by fixing a BFS deduplication issue.
+* Yul IR Code Generation: Preserve custom error argument of `require` when stripping of revert strings is selected via `--revert-strings strip`.
+
+
+### 0.8.34 (2026-02-18)
+
+Important Bugfixes:
+* Yul IR Code Generation: Fix a bug that could result in clearing a storage variable instead of a transient storage variable at the same position in the layout (and vice-versa).
+
+
+Compiler Features:
+* Yul Optimizer: Remove redundant prerequisite steps from the default optimizer sequence.
+
+
+### 0.8.33 (2025-12-18)
+
+Bugfixes:
+* TypeChecker: Fix internal error when accessing getters of constant variables.
+
+
+### 0.8.32 (2025-12-18)
+
+Important Bugfixes:
+* Code Generator: Fix a bug in clearing/copying of arrays that straddle the end of storage, potentially resulting in assignment/initialization/`delete`/`push()`/`pop()` skipping some or all of the intended storage writes.
+
+
+Bugfixes:
+* Codegen: Fix internal compiler error when emitting events via module member access.
+* TypeChecker: Fix error and event selectors not being considered compile-time constant.
+* TypeChecker: Fix `string.concat` and `bytes.concat` with constant arguments not being considered compile-time constant.
+
+
+### 0.8.31 (2025-12-03)
+
+Language Features:
+* Custom Storage Layout: Allow using `constant` state variables in the base slot expression.
+* DocString Parser: Warn about deprecation of inline assembly special comment `memory-safe-assembly`.
+* Syntax Checker: Warn about deprecation of ABI coder v1.
+* Syntax Checker: Warn about deprecation of virtual modifiers.
+* Type Checker: Warn about deprecation of `send` and `transfer` functions on instances of `address`.
+* Type Checker: Warn about deprecation of comparisons between variables of contract types.
+* Yul: Introduce builtin `clz(x)` for counting the number of leading zero bits in a 256-bit word.
+
+
+Compiler Features:
+* ethdebug: Experimental support for instructions and source locations under EOF.
+* EVM: Set default EVM Version to `osaka`.
+
+
+Bugfixes:
+* Assembler: Fix not using a fixed-width type for IDs being assigned to subassemblies nested more than one level away, resulting in inconsistent `--asm-json` output between target architectures.
+* Yul Optimizer: Fix edge case in which invalid Yul code is produced by ExpressionSimplifier due to expressions being substituted that contain out-of-scope variables.
+
+
+Build System:
+* Enable Linux arm64 binaries for testing and releases.
+* Ubuntu PPA Packages: Discontinue the PPA as a binary distribution channel.
+* Update minimum version requirements of Boost to 1.83.0 for non-windows builds and of GCC and Clang to 13.3 and 18.1.3, respectively. Fixes infinite recursion on `boost::rational` comparison affecting compiler binaries built with GCC<14.0 and Boost<1.75.
+
+
+### 0.8.30 (2025-05-07)
+
+Compiler Features:
+* EVM: Set default EVM Version to `prague`.
+* NatSpec: Capture Natspec documentation of `enum` values in the AST.
+
+
+Bugfixes:
+* SMTChecker: Do not consider loop conditions as constant-condition verification target as this could cause incorrect reports and internal compiler errors.
+* SMTChecker: Fix incorrect analysis when only a subset of contracts is selected with `--model-checker-contracts`.
+* SMTChecker: Fix internal compiler error when string literal is used to initialize user-defined type based on fixed bytes.
+
+
+### 0.8.29 (2025-03-12)
+
+Language Features:
+ * Allow relocating contract storage to an arbitrary location.
+
+
+Compiler Features:
+ * Error Reporting: Errors reported during code generation now point at the location of the contract when more fine-grained location is not available.
+ * ethdebug: Experimental support for instructions and source locations.
+ * EVM: Support for the EVM version "Osaka".
+ * EVM Assembly Import: Allow enabling opcode-based optimizer.
+ * General: The experimental EOF backend implements a subset of EOF sufficient to compile arbitrary high-level Solidity syntax via IR with optimization enabled.
+ * SMTChecker: Support ``block.blobbasefee`` and ``blobhash``.
+ * SMTChecker: The option ``--model-checker-print-query`` no longer requires ``--model-checker-solvers smtlib2``.
+ * SMTChecker: Z3 is now a runtime dependency, not a build dependency (except for emscripten build).
+ * Yul Parser: Make name clash with a builtin a non-fatal error.
+
+
+Bugfixes:
+ * Commandline Interface: Report StackTooDeep errors in compiler mode as proper errors instead of printing diagnostic information meant for internal compiler errors.
+ * Error Reporting: Fix error locations not being shown for source files with empty names.
+ * General: Fix internal compiler error when requesting IR AST outputs for interfaces and abstract contracts.
+ * Metadata: Fix custom cleanup sequence missing from metadata when other optimizer settings have default values.
+ * SMTChecker: Fix internal compiler error when analyzing overflowing expressions or bitwise negation of unsigned types involving constants.
+ * SMTChecker: Fix reporting on targets that are safe in the context of one contract but unsafe in the context of another contract.
+ * SMTChecker: Fix SMT logic error when analyzing cross-contract getter call with BMC.
+ * SMTChecker: Fix SMT logic error when contract deployment involves string literal to fixed bytes conversion.
+ * SMTChecker: Fix SMT logic error when external call has extra effectless parentheses.
+ * SMTChecker: Fix SMT logic error when initializing a fixed-sized-bytes array using string literals.
+ * SMTChecker: Fix SMT logic error when translating invariants involving array store and select operations.
+ * SMTChecker: Fix wrong encoding of string literals as arguments of ``ecrecover`` precompile.
+ * Standard JSON Interface: Fix ``generatedSources`` and ``sourceMap`` being generated internally even when not requested.
+ * TypeChecker: Fix spurious compilation errors due to incorrect computation of contract storage size which erroneously included transient storage variables.
+ * Yul: Fix internal compiler error when a code generation error should be reported instead.
+ * Yul Optimizer: Fix failing debug assertion due to dereferencing of an empty ``optional`` value.
+
+
+Build system:
+ * Linux release builds are fully static again and no longer depend on ``glibc``.
+ * Switch from C++17 to C++20 as the target standard.
+
+
+Solc-Js:
+ * The wrapper now requires at least nodejs v12.
+
+### 0.8.28 (2024-10-09)
+
+Language Features:
+ * Transient storage state variables of value types are now fully supported.
+
+
+Compiler Features:
+ * General: Generate JSON representations of Yul ASTs only on demand to reduce memory usage.
+ * Standard JSON Interface: Bytecode or IR can now be requested for a subset of all contracts without triggering unnecessary code generation for other contracts.
+
+
+Bugfixes:
+ * SMTChecker: Fix SMT logic error when assigning to an array of addresses.
+ * Yul AST: Fix shifted native source locations when debug info selection included code snippets.
+
+
+Build system:
+* Removed ``USE_LD_GOLD`` option and default to use the compiler default linker. For custom linkers, ``CMAKE_CXX_FLAGS`` can be used.
+
+
+### 0.8.27 (2024-09-04)
+
+Language Features:
+ * Accept declarations of state variables with ``transient`` data location (parser support only, no code generation yet).
+ * Make ``require(bool, Error)`` available when using the legacy pipeline.
+ * Yul: Parsing rules for source location comments have been relaxed: Whitespace between the location components as well as single-quoted code snippets are now allowed.
+
+
+Compiler Features:
+ * Commandline Interface: Add ``--transient-storage-layout`` output.
+ * Commandline Interface: Allow the use of ``--asm-json`` output option in assembler mode to export EVM assembly of the contracts in JSON format.
+ * Commandline Interface: Do not perform IR optimization when only unoptimized IR is requested.
+ * Constant Optimizer: Uses ``PUSH0`` if supported by the selected evm version.
+ * Error Reporting: Unimplemented features are now properly reported as errors instead of being handled as if they were bugs.
+ * EVM: Support for the EVM version "Prague".
+ * Peephole Optimizer: ``PUSH0``, when supported, is duplicated explicitly instead of using ``DUP1``.
+ * Peephole Optimizer: Remove identical code snippets that terminate the control flow if they occur one after another.
+ * SMTChecker: Add CHC engine check for underflow and overflow in unary minus operation.
+ * SMTChecker: Replace CVC4 as a possible BMC backend with cvc5.
+ * Standard JSON Interface: Add ``transientStorageLayout`` output.
+ * Standard JSON Interface: Do not perform IR optimization when only unoptimized IR is requested.
+ * Yul: Drop the deprecated typed Yul dialect that was only accessible via ``--yul`` in the CLI.
+ * Yul: The presence of types in untyped Yul dialects is now a parser error.
+ * Yul Optimizer: Caching of optimized IR to speed up optimization of contracts with bytecode dependencies.
+ * Yul Optimizer: The optimizer now treats some previously unrecognized identical literals as identical.
+
+
+Bugfixes:
+ * Assembler: Fix ICE caused by imprecise calculation of required size of tags in bytecode when code size is above 255.
+ * Parser: Fix spuriously emitted parser error for unary plus operations when used as binary operator in some cases.
+ * SMTChecker: Fix error that reports invalid number of verified checks for BMC and CHC engines.
+ * SMTChecker: Fix formatting of unary minus expressions in invariants.
+ * SMTChecker: Fix internal compiler error when reporting proved targets for BMC engine.
+ * SMTChecker: Fix SMT logic error when assigning to an array of contracts or functions.
+ * Standard JSON Interface: For Yul input, properly produce output artifacts in case of warnings.
+ * TypeChecker: Fix segfault when assigning nested tuple to tuple.
+ * Yul IR Code Generation: Deterministic order of Yul subobjects.
+ * Yul Optimizer: Fix Yul source locations always referring to unoptimized source, even in optimized outputs.
+ * Yul Optimizer: Fix warnings being generated twice when there are no errors.
+ * Yul Optimizer: Name simplification could lead to forbidden identifiers with a leading and/or trailing dot, e.g., ``x._`` would get simplified into ``x.``.
+ * Yul Parser: Fix segfault when parsing very long location comments.
+
+Build System:
+ * Change build system to use git submodules for some dependencies (nlohmann-json, fmtlib & range-v3).
+
+### 0.8.26 (2024-05-21)
+
+Language Features:
+ * Introduce a new overload ``require(bool, Error)`` that allows usage of ``require`` functions with custom errors. This feature is available in the ``via-ir`` pipeline only.
+
+
+Compiler Features:
+ * SMTChecker: Create balance check verification target for CHC engine.
+ * Yul IR Code Generation: Cheaper code for reverting with errors of a small static encoding size.
+ * Yul Optimizer: New, faster default optimizer step sequence.
+
+
+Bugfixes:
+ * Commandline Interface: Fix ICE when the optimizer is disabled and an empty/blank string is used for ``--yul-optimizations`` sequence.
+ * SMTChecker: Fix false positive when comparing hashes of same array or string literals.
+ * SMTChecker: Fix internal error on mapping access caused by too strong requirements on sort compatibility of the index and mapping domain.
+ * SMTChecker: Fix internal error when using an empty tuple in a conditional operator.
+ * SMTChecker: Fix internal error when using bitwise operators with an array element as argument.
+ * Standard JSON Interface: Fix ICE when the optimizer is disabled and an empty/blank string is used for ``optimizerSteps`` sequence.
+ * StaticAnalyzer: Only raise a compile time error for division and modulo by zero when it's between literals.
+ * TypeChecker: Fix compiler crash when the left-hand side of an assignment was a parenthesized non-tuple expression of a tuple type.
+ * Yul Optimizer: Fix optimizer executing each repeating part of the step sequence at least twice, even if the code size already became stable after the first iteration.
+ * Yul Optimizer: Fix the order of assignments generated by ``SSATransform`` being dependent on AST IDs, sometimes resulting in different (but equivalent) bytecode when unrelated files were added to the compilation pipeline.
+
+
+Build System:
+* Replace internal JSON library jsoncpp with nlohmann::json.
+
+
+### 0.8.25 (2024-03-14)
+
+Compiler Features:
+ * Code Generator: Use ``MCOPY`` instead of ``MLOAD``/``MSTORE`` loop when copying byte arrays.
+ * EVM: Set default EVM version to ``cancun``.
+ * Yul Analyzer: Emit transient storage warning only for the first occurrence of ``tstore``.
+
+
+Bugfixes:
+ * Assembler: Prevent incorrect calculation of tag sizes.
+ * Commandline Interface: Do not run IR pipeline when ``--via-ir`` is used but no output that depends on the IR is requested.
+ * EVM Assembly Import: Fix handling of missing source locations during import.
+ * SMTChecker: Ensure query is properly flushed to a file before calling solver when using SMT-LIB interface.
+ * SMTChecker: Fix internal error caused by not respecting the sign of an integer type when constructing zero-value SMT expressions.
+ * SMTChecker: Run Eldarica only when explicitly requested with `--model-checker-solvers eld`, even when it is present on the system.
+
+### 0.8.24 (2024-01-25)
+
+Language Features:
+ * Introduce global ``block.blobbasefee`` for retrieving the blob base fee of the current block.
+ * Introduce global function ``blobhash(uint)`` for retrieving versioned hashes of blobs, akin to the homonymous Yul builtin.
+ * Yul: Introduce builtin ``blobbasefee()`` for retrieving the blob base fee of the current block.
+ * Yul: Introduce builtin ``blobhash()`` for retrieving versioned hashes of blobs associated with the transaction.
+ * Yul: Introduce builtin ``mcopy()`` for cheaply copying data between memory areas.
+ * Yul: Introduce builtins ``tload()`` and ``tstore()`` for transient storage access.
+
+
+Compiler Features:
+ * EVM: Support for the EVM Version "Cancun".
+ * SMTChecker: Support `bytes.concat` except when string literals are passed as arguments.
+ * SMTChecker: Print a message that function parameter name was used instead of a concrete value in a counterexample when the concrete value found by the solver is too long to print.
+ * Standard JSON Interface: Add experimental support to import EVM assembly in the format used by ``--asm-json``.
+ * TypeChecker: Comparison of internal function pointers now yields a warning, as it can produce unexpected results with the legacy pipeline enabled.
+
+
+Bugfixes:
+ * AST import: Fix bug when importing inline assembly with empty ``let`` variable declaration.
+
+
+### 0.8.23 (2023-11-08)
+
+Important Bugfixes:
+ * Optimizer: Fix block deduplicator bug which led to blocks which are identical apart from the contents of ``verbatim`` instructions to be treated as equivalent and thus collapsed into a single one.
+
+
+Compiler Features:
+ * Commandline Interface: An empty ``--yul-optimizations`` sequence can now be always provided.
+ * Standard JSON Interface: An empty ``optimizerSteps`` sequence can now always be provided.
+
+
+### 0.8.22 (2023-10-25)
+
+Language Features:
+ * Allow defining events at file level.
+
+
+Compiler Features:
+ * Code Generator: Remove redundant overflow checks of certain ``for`` loops when the counter variable cannot overflow.
+ * Commandline Interface: Add ``--no-import-callback`` option that prevents the compiler from loading source files not given explicitly on the CLI or in Standard JSON input.
+ * Commandline Interface: Add an experimental ``--import-asm-json`` option that can import EVM assembly in the format used by ``--asm-json``.
+ * Commandline Interface: Use proper severity and coloring also for error messages produced outside of the compilation pipeline.
+ * EVM: Deprecate support for "homestead", "tangerineWhistle", "spuriousDragon" and "byzantium" EVM versions.
+ * Parser: Remove the experimental error recovery mode (``--error-recovery`` / ``settings.parserErrorRecovery``).
+ * SMTChecker: Support user-defined operators.
+ * Yul Optimizer: If ``PUSH0`` is supported, favor zero literals over storing zero values in variables.
+ * Yul Optimizer: Run the ``Rematerializer`` and ``UnusedPruner`` steps at the end of the default clean-up sequence.
+
+
+Bugfixes:
+ * AST: Fix wrong initial ID for Yul nodes in the AST.
+ * Code Generator: Fix output from via-IR code generator being dependent on which files were discovered by import callback. In some cases, a different AST ID assignment would alter the order of functions in internal dispatch, resulting in superficially different but semantically equivalent bytecode.
+ * NatSpec: Fix internal error when requesting userdoc or devdoc for a contract that emits an event defined in a foreign contract or interface.
+ * SMTChecker: Fix encoding error that causes loops to unroll after completion.
+ * SMTChecker: Fix inconsistency on constant condition checks when ``while`` or ``for`` loops are unrolled before the condition check.
+ * Yul Optimizer: Fix replacement decisions during CSE being affected by Yul variable names generated by the compiler, resulting in different (but equivalent) bytecode in some situations.
+
+
+### 0.8.21 (2023-07-19)
+
+Important Bugfixes:
+ * Code Generator: Always generate code for the expression in ``<expression>.selector`` in the legacy code generation pipeline.
+ * Yul Optimizer: Fix ``FullInliner`` step (``i``) not preserving the evaluation order of arguments passed into inlined functions in code that is not in expression-split form (i.e. when using a custom optimizer sequence in which the step not preceded by ``ExpressionSplitter`` (``x``)).
+
+
+Language Features:
+ * Allow qualified access to events from other contracts.
+ * Relax restrictions on initialization of immutable variables. Reads and writes may now happen at any point at construction time outside of functions and modifiers. Explicit initialization is no longer mandatory.
+
+
+Compiler Features:
+ * Commandline Interface: Add ``--ast-compact-json`` output in assembler mode.
+ * Commandline Interface: Add ``--ir-ast-json`` and ``--ir-optimized-ast-json`` outputs for Solidity input, providing AST in compact JSON format for IR and optimized IR.
+ * Commandline Interface: Respect ``--optimize-yul`` and ``--no-optimize-yul`` in compiler mode and accept them in assembler mode as well. ``--optimize --no-optimize-yul`` combination now allows enabling EVM assembly optimizer without enabling Yul optimizer.
+ * EWasm: Remove EWasm backend.
+ * Parser: Introduce ``pragma experimental solidity``, which will enable an experimental language mode that in particular has no stability guarantees between non-breaking releases and is not suited for production use.
+ * SMTChecker: Add ``--model-checker-print-query`` CLI option and ``settings.modelChecker.printQuery`` JSON option to output the SMTChecker queries in the SMTLIB2 format. This requires using ``smtlib2`` solver only.
+ * Standard JSON Interface: Add ``ast`` file-level output for Yul input.
+ * Standard JSON Interface: Add ``irAst`` and ``irOptimizedAst`` contract-level outputs for Solidity input, providing AST in compact JSON format for IR and optimized IR.
+ * Yul Optimizer: Remove experimental ``ReasoningBasedSimplifier`` optimization step.
+ * Yul Optimizer: Stack-to-memory mover is now enabled by default whenever possible for via IR code generation and pure Yul compilation.
+
+
+Bugfixes:
+ * Code Generator: Disallow complex expressions whose results are types, built-ins, modules or some unassignable functions. The legacy code generation pipeline would not actually evaluate them, discarding any side-effects they might have.
+ * Code Generator: Fix not entirely deterministic order of functions in unoptimized Yul output. The choice of C++ compiler in some cases would result in different (but equivalent) bytecode (especially from native binaries vs emscripten binaries).
+ * Commandline Interface: Fix internal error when using ``--stop-after parsing`` and requesting some of the outputs that require full analysis or compilation.
+ * Commandline Interface: It is no longer possible to specify both ``--optimize-yul`` and ``--no-optimize-yul`` at the same time.
+ * SMTChecker: Fix encoding of side-effects inside ``if`` and ``ternary conditional``statements in the BMC engine.
+ * SMTChecker: Fix false negative when a verification target can be violated only by trusted external call from another public function.
+ * SMTChecker: Fix generation of invalid SMT-LIB2 scripts in BMC engine with trusted mode for external calls when CHC engine times out.
+ * SMTChecker: Fix internal error caused by incorrectly classifying external function call using function pointer as a public getter.
+ * SMTChecker: Fix internal error caused by using external identifier to encode member access to functions that take an internal function as a parameter.
+ * Standard JSON Interface: Fix an incomplete AST being returned when analysis is interrupted by certain kinds of fatal errors.
+ * Type Checker: Disallow using certain unassignable function types in complex expressions.
+ * Type Checker: Function declaration types referring to different declarations are no longer convertible to each other.
+ * Yul Optimizer: Ensure that the assignment of memory slots for variables moved to memory does not depend on AST IDs that may depend on whether additional files are included during compilation.
+ * Yul Optimizer: Fix ``FullInliner`` step not ignoring code that is not in expression-split form.
+ * Yul Optimizer: Fix optimized IR being unnecessarily passed through the Yul optimizer again before bytecode generation.
+
+
+AST Changes:
+ * AST: Add the ``experimentalSolidity`` field to the ``SourceUnit`` nodes, which indicate whether the experimental parsing mode has been enabled via ``pragma experimental solidity``.
+
+
+### 0.8.20 (2023-05-10)
+
+Compiler Features:
+ * Assembler: Use ``push0`` for placing ``0`` on the stack for EVM versions starting from "Shanghai". This decreases the deployment and runtime costs.
+ * EVM: Set default EVM version to "Shanghai".
+ * EVM: Support for the EVM Version "Shanghai".
+ * NatSpec: Add support for NatSpec documentation in ``enum`` definitions.
+ * NatSpec: Add support for NatSpec documentation in ``struct`` definitions.
+ * NatSpec: Include NatSpec from events that are emitted by a contract but defined outside of it in userdoc and devdoc output.
+ * Optimizer: Re-implement simplified version of ``UnusedAssignEliminator`` and ``UnusedStoreEliminator``. It can correctly remove some unused assignments in deeply nested loops that were ignored by the old version.
+ * Parser: Unary plus is no longer recognized as a unary operator in the AST and triggers an error at the parsing stage (rather than later during the analysis).
+ * SMTChecker: Add CLI option ``--model-checker-bmc-loop-iterations`` and a JSON option ``settings.modelChecker.bmcLoopIterations`` that specify how many loop iterations the BMC engine should unroll. Note that false negatives are possible when unrolling loops. This is due to the possibility that bmc loop iteration setting is less than actual number of iterations needed to complete a loop.
+ * SMTChecker: Group all messages about unsupported language features in a single warning. The CLI option ``--model-checker-show-unsupported`` and the JSON option ``settings.modelChecker.showUnsupported`` can be enabled to show the full list.
+ * SMTChecker: Properties that are proved safe are now reported explicitly at the end of analysis. By default, only the number of safe properties is shown. The CLI option ``--model-checker-show-proved-safe`` and the JSON option ``settings.modelChecker.showProvedSafe`` can be enabled to show the full list of safe properties.
+ * Standard JSON Interface: Add experimental support for importing ASTs via Standard JSON.
+ * Yul EVM Code Transform: If available, use ``push0`` instead of ``codesize`` to produce an arbitrary value on stack in order to create equal stack heights between branches.
+
+
+Bugfixes:
+ * ABI: Include events in the ABI that are emitted by a contract but defined outside of it.
+ * Immutables: Disallow initialization of immutables in try/catch statements.
+ * SMTChecker: Fix false positives in ternary operators that contain verification targets in its branches, directly or indirectly.
+
+
+AST Changes:
+ * AST: Add the ``internalFunctionIDs`` field to the AST nodes of contracts containing IDs of functions that may be called via the internal dispatch. The field is a map from function AST IDs to internal dispatch function IDs. These IDs are always generated, but they are only used in via-IR code generation.
+ * AST: Add the ``usedEvents`` field to ``ContractDefinition`` which contains the AST IDs of all events emitted by the contract as well as all events defined and inherited by the contract.
+
+
+### 0.8.19 (2023-02-22)
+
+Language Features:
+ * Allow defining custom operators for user-defined value types via ``using {f as +} for T global`` syntax.
+
+
+Compiler Features:
+ * SMTChecker: New trusted mode that assumes that any compile-time available code is the actual used code even in external calls. This can be used via the CLI option ``--model-checker-ext-calls trusted`` or the JSON field ``settings.modelChecker.extCalls: "trusted"``.
+
+
+Bugfixes:
+ * Assembler: Avoid duplicating subassembly bytecode where possible.
+ * Code Generator: Avoid including references to the deployed label of referenced functions if they are called right away.
+ * ContractLevelChecker: Properly distinguish the case of missing base constructor arguments from having an unimplemented base function.
+ * SMTChecker: Fix internal error caused by unhandled ``z3`` expressions that come from the solver when bitwise operators are used.
+ * SMTChecker: Fix internal error when using the custom NatSpec annotation to abstract free functions.
+ * TypeChecker: Also allow external library functions in ``using for``.
+
+
+AST Changes:
+ * AST: Add ``function`` field to ``UnaryOperation`` and ``BinaryOperation`` AST nodes. ``functionList`` in ``UsingForDirective`` AST nodes will now contain ``operator`` and ``definition`` members instead of ``function`` when the list entry defines an operator.
+
+
+### 0.8.18 (2023-02-01)
+
+Language Features:
+ * Allow named parameters in mapping types.
+
+
+Compiler Features:
+ * Commandline Interface: Add ``--no-cbor-metadata`` that skips CBOR metadata from getting appended at the end of the bytecode.
+ * Commandline Interface: Return exit code ``2`` on uncaught exceptions.
+ * EVM: Deprecate ``block.difficulty`` and disallow ``difficulty()`` in inline assembly for EVM versions >= paris. The change is due to the renaming introduced by [EIP-4399](https://eips.ethereum.org/EIPS/eip-4399).
+ * EVM: Introduce ``block.prevrandao`` in Solidity and ``prevrandao()`` in inline assembly for EVM versions >= paris.
+ * EVM: Set the default EVM version to "Paris".
+ * EVM: Support for the EVM version "Paris".
+ * Language Server: Add basic document hover support.
+ * Natspec: Add event Natspec inheritance for devdoc.
+ * Optimizer: Added optimization rule ``and(shl(X, Y), shl(X, Z)) => shl(X, and(Y, Z))``.
+ * Parser: More detailed error messages about invalid version pragmas.
+ * SMTChecker: Make ``z3`` the default solver for the BMC and CHC engines instead of all solvers.
+ * SMTChecker: Support Eldarica as a Horn solver for the CHC engine when using the CLI option ``--model-checker-solvers eld``. The binary ``eld`` must be available in the system.
+ * Solidity Upgrade Tool: Remove ``solidity-upgrade`` tool.
+ * Standard JSON: Add a boolean field ``settings.metadata.appendCBOR`` that skips CBOR metadata from getting appended at the end of the bytecode.
+ * TypeChecker: Warn when using deprecated builtin ``selfdestruct``.
+ * Yul EVM Code Transform: Generate more optimal code for user-defined functions that always terminate a transaction. No return labels will be pushed for calls to functions that always terminate.
+ * Yul Optimizer: Allow replacing the previously hard-coded cleanup sequence by specifying custom steps after a colon delimiter (``:``) in the sequence string.
+ * Yul Optimizer: Eliminate ``keccak256`` calls if the value was already calculated by a previous call and can be reused.
+
+
+Bugfixes:
+ * Parser: Disallow several ``indexed`` attributes for the same event parameter.
+ * Parser: Disallow usage of the ``indexed`` attribute for modifier parameters.
+ * SMTChecker: Fix display error for negative integers that are one more than powers of two.
+ * SMTChecker: Fix internal error on chain assignments using static fully specified state variables.
+ * SMTChecker: Fix internal error on multiple wrong SMTChecker natspec entries.
+ * SMTChecker: Fix internal error when a public library function is called internally.
+ * SMTChecker: Fix internal error when deleting struct member of function type.
+ * SMTChecker: Fix internal error when using user-defined types as mapping indices or struct members.
+ * SMTChecker: Improved readability for large integers that are powers of two or almost powers of two in error messages.
+ * TypeChecker: Fix bug where private library functions could be attached with ``using for`` outside of their declaration scope.
+ * Yul Optimizer: Hash hex and decimal literals according to their value instead of their representation, improving the detection of equivalent functions.
+
+
+### 0.8.17 (2022-09-08)
+
+Important Bugfixes:
+ * Yul Optimizer: Prevent the incorrect removal of storage writes before calls to Yul functions that conditionally terminate the external EVM call.
+
+
+Compiler Features:
+ * Code Generator: More efficient overflow checks for multiplication.
+ * Language Server: Analyze all files in a project by default (can be customized by setting ``'file-load-strategy'`` to ``'directly-opened-and-on-import'`` in LSP settings object).
+ * Yul Optimizer: Simplify the starting offset of zero-length operations to zero.
+
+
+Bugfixes:
+ * Type Checker: Fix internal compiler error on tuple assignments with invalid left-hand side.
+ * Yul IR Code Generation: Fix internal compiler error when accessing the ``.slot`` member of a mapping through a storage reference in inline assembly.
+
+
+Build System:
+ * Allow disabling pedantic warnings and do not treat warnings as errors during compiler build when ``-DPEDANTIC=OFF`` flag is passed to CMake.
+ * Update emscripten to version 3.1.19.
+
+
+### 0.8.16 (2022-08-08)
+
+Important Bugfixes:
+ * Code Generation: Fix data corruption that affected ABI-encoding of calldata values represented by tuples: structs at any nesting level; argument lists of external functions, events and errors; return value lists of external functions. The 32 leading bytes of the first dynamically-encoded value in the tuple would get zeroed when the last component contained a statically-encoded array.
+
+
+Compiler Features:
+ * Code Generator: More efficient code for checked addition and subtraction.
+ * TypeChecker: Support using library constants in initializers of other constants.
+ * Yul IR Code Generation: Improved copy routines for arrays with packed storage layout.
+ * Yul Optimizer: Add rule to convert ``mod(add(X, Y), A)`` into ``addmod(X, Y, A)``, if ``A`` is a power of two.
+ * Yul Optimizer: Add rule to convert ``mod(mul(X, Y), A)`` into ``mulmod(X, Y, A)``, if ``A`` is a power of two.
+
+
+Bugfixes:
+ * Commandline Interface: Disallow the following options outside of the compiler mode: ``--via-ir``,``--metadata-literal``, ``--metadata-hash``, ``--model-checker-show-unproved``, ``--model-checker-div-mod-no-slacks``, ``--model-checker-engine``, ``--model-checker-invariants``, ``--model-checker-solvers``, ``--model-checker-timeout``, ``--model-checker-contracts``, ``--model-checker-targets``.
+ * Type Checker: Fix compiler crash on tuple assignments involving certain patterns with unary tuples on the left-hand side.
+ * Type Checker: Fix compiler crash when ``abi.encodeCall`` received a tuple expression instead of an inline tuple.
+ * Type Checker: Fix null dereference in ``abi.encodeCall`` type checking of free function.
+
+
+### 0.8.15 (2022-06-15)
+
+Important Bugfixes:
+ * Code Generation: Avoid writing dirty bytes to storage when copying ``bytes`` arrays.
+ * Yul Optimizer: Keep all memory side-effects of inline assembly blocks.
+
+
+Language Features:
+ * Add `E.selector` for a non-anonymous event `E` to access the 32-byte selector topic.
+
+
+Compiler Features:
+ * Language Server: Add rudimentary support for semantic highlighting.
+ * Language Server: Adds support for configuring ``include-paths`` JSON settings object that can be passed during LSP configuration stage.
+ * Language Server: Always add ``{project_root}/node_modules`` to include search paths.
+ * Type Checker: Warn about assignments involving multiple pushes to storage ``bytes`` that may invalidate references.
+ * Yul Optimizer: Improve inlining heuristics for via IR code generation and pure Yul compilation.
+
+Bugfixes:
+ * ABI Encoder: When encoding an empty string coming from storage do not add a superfluous empty slot for data.
+ * Common Subexpression Eliminator: Process assembly items in chunks with maximum size of 2000. It helps to avoid extremely time-consuming searches during code optimization.
+ * DocString Parser: Fix ICE caused by an immutable struct with mapping.
+ * Yul IR Code Generation: More robust cleanup in corner cases during memory to storage copies.
+ * Yul Optimizer: Do not remove ``returndatacopy`` in cases in which it might perform out-of-bounds reads that unconditionally revert as out-of-gas. Previously, any ``returndatacopy`` that wrote to memory that was never read from was removed without accounting for the out-of-bounds condition.
+
+
+### 0.8.14 (2022-05-17)
+
+Important Bugfixes:
+ * ABI Encoder: When ABI-encoding values from calldata that contain nested arrays, correctly validate the nested array length against ``calldatasize()`` in all cases.
+ * Override Checker: Allow changing data location for parameters only when overriding external functions.
+
+
+Compiler Features:
+ * Assembly-Json Exporter: Include source list in `sourceList` field.
+ * Commandline Interface: Option ``--pretty-json`` works also with the following options: ``--abi``, ``--asm-json``, ``--ast-compact-json``, ``--devdoc``, ``--storage-layout``, ``--userdoc``.
+ * Language Server: Allow full filesystem access to language server.
+ * Peephole Optimizer: Remove operations without side effects before simple terminations.
+ * SMTChecker: Support ``abi.encodeCall`` taking into account the called selector.
+
+
+Bugfixes:
+ * Assembly-Json Exporter: Fix assembly json export to store jump types of operations in `jumpType` field instead of `value`.
+ * SMTChecker: Fix ABI compatibility with z3 >=4.8.16.
+ * SMTChecker: Fix bug when z3 is selected but not available at runtime.
+ * Type Checker: Properly check restrictions of ``using ... global`` in conjunction with libraries.
+ * TypeChecker: Convert parameters of function type to how they would be called for ``abi.encodeCall``.
+
+
+### 0.8.13 (2022-03-16)
+
+Important Bugfixes:
+ * Code Generator: Correctly encode literals used in ``abi.encodeCall`` in place of fixed bytes arguments.
+
+
+Language Features:
+ * General: Allow annotating inline assembly as memory-safe to allow optimizations and stack limit evasion that rely on respecting Solidity's memory model.
+ * General: ``using M for Type;`` is allowed at file level and ``M`` can now also be a brace-enclosed list of free functions or library functions.
+ * General: ``using ... for T global;`` is allowed at file level where the user-defined type ``T`` has been defined, resulting in the effect of the statement being available everywhere ``T`` is available.
+
+
+Compiler Features:
+ * Commandline Interface: Allow the use of ``--via-ir`` in place of ``--experimental-via-ir``.
+ * Compilation via Yul IR is no longer marked as experimental.
+ * JSON-AST: Added selector field for errors and events.
+ * Language Server: Implements goto-definition.
+ * Peephole Optimizer: Optimize comparisons in front of conditional jumps and conditional jumps across a single unconditional jump.
+ * Yul EVM Code Transform: Avoid unnecessary ``pop``s on terminating control flow.
+ * Yul IR Code Generation: When the result of an external call is statically-sized, ignore any returndata past the size expected by the compiler.
+ * Yul Optimizer: Remove ``sstore`` and ``mstore`` operations that are never read from.
+
+
+Bugfixes:
+ * General: Fix internal error for locales with unusual capitalization rules. Locale set in the environment is now completely ignored.
+ * Type Checker: Fix incorrect type checker errors when importing overloaded functions.
+ * Yul IR Code Generation: Optimize embedded creation code with correct settings. This fixes potential mismatches between the constructor code of a contract compiled in isolation and the bytecode in ``type(C).creationCode``, resp. the bytecode used for ``new C(...)``.
 
 
 ### 0.8.12 (2022-02-16)
@@ -1002,7 +1668,7 @@ Language Features:
  * Introduce ``virtual`` and ``override`` keywords.
  * Modify ``push(element)`` for dynamic storage arrays such that it does not return the new length anymore.
  * Yul: Introduce ``leave`` statement that exits the current function.
- * JSON AST: Add the function selector of each externally-visible FunctonDefinition to the AST JSON export.
+ * JSON AST: Add the function selector of each externally-visible FunctionDefinition to the AST JSON export.
 
 Compiler Features:
  * Allow revert strings to be stripped from the binary using the ``--revert-strings`` option or the ``settings.debug.revertStrings`` setting.

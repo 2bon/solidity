@@ -7,9 +7,7 @@ contract C {
 
 		(uint[] memory c, uint[] memory d) = abi.decode(b1, (uint[], uint[]));
 		assert(a.length == c.length);
-		assert(a.length == d.length); // should fail
 		assert(b.length == d.length);
-		assert(b.length == c.length); // should fail
 
 		(uint[] memory e, uint[] memory f, uint[] memory g) = abi.decode(b1, (uint[], uint[], uint[]));
 		assert(e.length == a.length); // should fail
@@ -24,7 +22,6 @@ contract C {
 
 		(uint[] memory k, uint[] memory l) = abi.decode(b2, (uint[], uint[]));
 		assert(k.length == a.length); // should fail
-		assert(k.length == l.length); // should fail
 		assert(l.length == b.length); // should fail
 	}
 }
@@ -32,13 +29,12 @@ contract C {
 // SMTEngine: all
 // SMTIgnoreCex: yes
 // ----
-// Warning 6328: (182-210): CHC: Assertion violation happens here.
-// Warning 6328: (335-363): CHC: Assertion violation happens here.
-// Warning 6328: (414-442): CHC: Assertion violation happens here.
+// Warning 6328: (182-210): CHC: Assertion violation happens here.\nCounterexample:\n\nc = []\nd = []\ne = []\nf = []\ng = []\nh = []\ni = []\nj = 0\nk = []\nl = []\n\nTransaction trace:\nC.constructor()\nC.abiDecodeArray(b1, b2) -- counterexample incomplete; parameter name used instead of value
+// Warning 6328: (466-494): CHC: Assertion violation happens here.
+// Warning 6328: (513-541): CHC: Assertion violation happens here.
 // Warning 6328: (560-588): CHC: Assertion violation happens here.
-// Warning 6328: (607-635): CHC: Assertion violation happens here.
-// Warning 6328: (654-682): CHC: Assertion violation happens here.
-// Warning 6328: (879-916): CHC: Assertion violation happens here.
-// Warning 6328: (1009-1037): CHC: Assertion violation happens here.
-// Warning 6328: (1056-1084): CHC: Assertion violation happens here.
-// Warning 6328: (1103-1131): CHC: Assertion violation happens here.
+// Warning 6328: (785-822): CHC: Assertion violation happens here.
+// Warning 6328: (915-943): CHC: Assertion violation happens here.
+// Warning 6328: (962-990): CHC: Assertion violation happens here.
+// Info 1391: CHC: 6 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

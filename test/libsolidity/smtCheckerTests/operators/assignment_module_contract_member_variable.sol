@@ -31,4 +31,5 @@ contract A {
 // ----
 // Warning 6328: (AASource:159-178): CHC: Assertion violation happens here.\nCounterexample:\nx = (- 1), y = (- 2)\n\nTransaction trace:\nA.constructor()\nState: x = 0, y = 0\nA.a()\nState: x = (- 2), y = (- 2)\nA.a()
 // Warning 6328: (AASource:370-386): CHC: Assertion violation happens here.\nCounterexample:\nx = 8, y = (- 2)\n\nTransaction trace:\nA.constructor()\nState: x = 0, y = 0\nA.a()
-// Info 1180: Contract invariant(s) for AASource:A:\n(((x = 0) && (y = 0)) || ((x = (- 2)) && (y = (- 2))))\n
+// Info 1391: CHC: 25 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

@@ -12,8 +12,5 @@ contract C {
     return f() - g() - h();
   }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // foo() -> 0x60

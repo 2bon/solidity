@@ -20,19 +20,22 @@ contract c {
         return data1.data[i];
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // storageEmpty -> 1
 // set(uint256,bytes,uint256): 12, 0x60, 13, 33, "12345678901234567890123456789012", "3" -> true
-// gas irOptimized: 133728
-// gas legacy: 134436
-// gas legacyOptimized: 133879
+// gas irOptimized: 133554
+// gas legacy: 134624
+// gas legacyOptimized: 133857
+// gas ssaCFGOptimized: 133543
 // test(uint256): 32 -> "3"
 // storageEmpty -> 0
 // copy() -> true
 // storageEmpty -> 1
 // set(uint256,bytes,uint256): 12, 0x60, 13, 33, "12345678901234567890123456789012", "3" -> true
+// gas irOptimized: 133554
+// gas legacy: 134624
+// gas legacyOptimized: 133857
+// gas ssaCFGOptimized: 133543
 // storageEmpty -> 0
 // del() -> true
 // storageEmpty -> 1

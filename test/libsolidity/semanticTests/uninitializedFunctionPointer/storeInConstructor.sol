@@ -14,9 +14,6 @@ contract InvalidTest {
     storedFn();
   }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> FAILURE, hex"4e487b71", 0x51
 // f() -> FAILURE, hex"4e487b71", 0x51

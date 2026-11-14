@@ -7,8 +7,5 @@ contract C {
         abi.decode;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() ->

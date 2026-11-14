@@ -27,9 +27,5 @@ contract Flow {
         return (t[0].x(), t[1].x());
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 1, 2

@@ -37,14 +37,16 @@ contract Main {
         them = address(h).balance;
     }
 }
-
-// ====
-// compileViaYul: also
 // ----
 // constructor(), 22 wei ->
-// gas irOptimized: 276469
-// gas legacy: 402045
-// gas legacyOptimized: 266772
+// gas irOptimized: 143832
+// gas irOptimized code: 117600
+// gas legacy: 156599
+// gas legacy code: 236400
+// gas legacyOptimized: 143592
+// gas legacyOptimized code: 118000
+// gas ssaCFGOptimized: 143520
+// gas ssaCFGOptimized code: 113200
 // getFlag() -> true
 // getName() -> "abc"
 // getBalances() -> 12, 10

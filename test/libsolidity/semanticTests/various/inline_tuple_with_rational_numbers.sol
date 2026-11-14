@@ -4,9 +4,5 @@ contract c {
         return foo3[0];
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 1

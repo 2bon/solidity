@@ -51,7 +51,7 @@ public:
 	/// place as required by the ABI encoding). Use CompilerUtils::convertType if you want real
 	/// memory copies of nested arrays.
 	/// Stack pre: memory_offset source_item
-	/// Stack post: memory_offest + length(padded)
+	/// Stack post: memory_offset + length(padded)
 	void copyArrayToMemory(ArrayType const& _sourceType, bool _padToWordBoundaries = true) const;
 	/// Clears the given dynamic or static array.
 	/// Stack pre: storage_ref storage_byte_offset
@@ -61,10 +61,6 @@ public:
 	/// Stack pre: reference (excludes byte offset)
 	/// Stack post:
 	void clearDynamicArray(ArrayType const& _type) const;
-	/// Changes the size of a dynamic array and clears the tail if it is shortened.
-	/// Stack pre: reference (excludes byte offset) new_length
-	/// Stack post:
-	void resizeDynamicArray(ArrayType const& _type) const;
 	/// Increments the size of a dynamic array by one.
 	/// Does not touch the new data element. In case of a byte array, this might move the
 	/// data.
@@ -76,9 +72,9 @@ public:
 	/// Stack pre: reference
 	/// Stack post:
 	void popStorageArrayElement(ArrayType const& _type) const;
-	/// Appends a loop that clears a sequence of storage slots of the given type (excluding end).
-	/// Stack pre: end_ref start_ref
-	/// Stack post: end_ref
+	/// Appends a loop that clears a sequence of storage slots of the given type.
+	/// Stack pre: start_ref slot_count
+	/// Stack post:
 	void clearStorageLoop(Type const* _type) const;
 	/// Converts length to size (number of storage slots or calldata/memory bytes).
 	/// if @a _pad then add padding to multiples of 32 bytes for calldata/memory.
@@ -110,8 +106,8 @@ public:
 private:
 	/// Adds the given number of bytes to a storage byte offset counter and also increments
 	/// the storage offset if adding this number again would increase the counter over 32.
-	/// @param byteOffsetPosition the stack offset of the storage byte offset
-	/// @param storageOffsetPosition the stack offset of the storage slot offset
+	/// @param _byteOffsetPosition the stack offset of the storage byte offset
+	/// @param _storageOffsetPosition the stack offset of the storage slot offset
 	void incrementByteOffset(unsigned _byteSize, unsigned _byteOffsetPosition, unsigned _storageOffsetPosition) const;
 
 	CompilerContext& m_context;

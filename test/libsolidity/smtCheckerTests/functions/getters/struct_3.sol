@@ -21,12 +21,6 @@ contract C {
 // ====
 // SMTEngine: all
 // ----
-// Warning 1218: (273-277): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (281-287): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (314-318): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (307-326): CHC: Error trying to invoke SMT solver.
-// Warning 6368: (273-277): CHC: Out of bounds access might happen here.
-// Warning 6368: (281-287): CHC: Out of bounds access might happen here.
-// Warning 6368: (314-318): CHC: Out of bounds access might happen here.
-// Warning 6328: (307-326): CHC: Assertion violation might happen here.
-// Warning 4661: (307-326): BMC: Assertion violation happens here.
+// Warning 6328: (307-326): CHC: Assertion violation happens here.\nCounterexample:\nm = {s: [0x66, 0x6f, 0x6f], b: [0x62, 0x61, 0x72]}\ns = [0x66, 0x6f, 0x6f]\nb = [0x62, 0x61, 0x72]\n\nTransaction trace:\nC.constructor()\nState: m = {s: [0x66, 0x6f, 0x6f], b: [0x62, 0x61, 0x72]}\nC.f()
+// Info 1391: CHC: 5 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

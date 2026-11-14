@@ -27,25 +27,25 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/program_options.hpp>
+#include <boost/test/unit_test.hpp>
+
+namespace solidity::yul
+{
+class EVMDialect;
+}
 
 namespace solidity::test
 {
 
 #ifdef _WIN32
 static constexpr auto evmoneFilename = "evmone.dll";
-static constexpr auto evmoneDownloadLink = "https://github.com/ethereum/evmone/releases/download/v0.8.0/evmone-0.8.0-windows-amd64.zip";
-static constexpr auto heraFilename = "hera.dll";
-static constexpr auto heraDownloadLink = "https://github.com/ewasm/hera/archive/v0.3.2-evmc8.tar.gz";
+static constexpr auto evmoneDownloadLink = "https://github.com/ipsilon/evmone/releases/download/v0.22.0/evmone-0.22.0-windows-amd64.zip";
 #elif defined(__APPLE__)
 static constexpr auto evmoneFilename = "libevmone.dylib";
-static constexpr auto evmoneDownloadLink = "https://github.com/ethereum/evmone/releases/download/v0.8.0/evmone-0.8.0-darwin-x86_64.tar.gz";
-static constexpr auto heraFilename = "libhera.dylib";
-static constexpr auto heraDownloadLink = "https://github.com/ewasm/hera/releases/download/v0.5.0/hera-0.5.0-darwin-x86_64.tar.gz";
+static constexpr auto evmoneDownloadLink = "https://github.com/ipsilon/evmone/releases/download/v0.22.0/evmone-0.22.0-darwin-arm64.tar.gz";
 #else
 static constexpr auto evmoneFilename = "libevmone.so";
-static constexpr auto evmoneDownloadLink = "https://github.com/ethereum/evmone/releases/download/v0.8.0/evmone-0.8.0-linux-x86_64.tar.gz";
-static constexpr auto heraFilename = "libhera.so";
-static constexpr auto heraDownloadLink = "https://github.com/ewasm/hera/releases/download/v0.5.0/hera-0.5.0-linux-x86_64.tar.gz";
+static constexpr auto evmoneDownloadLink = "https://github.com/ipsilon/evmone/releases/download/v0.22.0/evmone-0.22.0-linux-x86_64.tar.gz";
 #endif
 
 struct ConfigException: public util::Exception {};
@@ -58,10 +58,7 @@ struct CommonOptions
 
 	std::vector<boost::filesystem::path> vmPaths;
 	boost::filesystem::path testPath;
-	bool ewasm = false;
 	bool optimize = false;
-	bool enforceViaYul = false;
-	bool enforceCompileToEwasm = false;
 	bool enforceGasTest = false;
 	u256 enforceGasTestMinValue = 100000;
 	bool disableSemanticTests = false;
@@ -73,11 +70,21 @@ struct CommonOptions
 	size_t selectedBatch = 0;
 
 	langutil::EVMVersion evmVersion() const;
+	yul::EVMDialect const& evmDialect() const;
 
 	virtual void addOptions();
+	// @returns true if the program should continue, false if it should exit immediately without
+	// reporting an error.
+	// Throws ConfigException or std::runtime_error if parsing fails.
 	virtual bool parse(int argc, char const* const* argv);
 	// Throws a ConfigException on error
 	virtual void validate() const;
+
+	/// @returns string with a key=value list of the options separated by comma
+	/// Ex.: "evmVersion=london, optimize=true, useABIEncoderV1=false"
+	virtual std::string toString(std::vector<std::string> const& _selectedOptions) const;
+	/// Helper to print the value of settings used
+	virtual void printSelectedOptions(std::ostream& _stream, std::string const& _linePrefix, std::vector<std::string> const& _selectedOptions) const;
 
 	static CommonOptions const& get();
 	static void setSingleton(std::unique_ptr<CommonOptions const>&& _instance);
@@ -97,6 +104,11 @@ private:
 /// I.e. if the test is located in the semantic test directory and is not excluded due to being a part of external sources.
 /// Note: @p _testPath can be relative but must include at least the `/test/libsolidity/semanticTests/` part
 bool isValidSemanticTestPath(boost::filesystem::path const& _testPath);
+
+/// Helper that can be used to skip tests when the EVM version selected on the command line
+/// is older than @p _minEVMVersion.
+/// @return A predicate (function) that can be passed into @a boost::unit_test::precondition().
+boost::unit_test::precondition::predicate_t minEVMVersionCheck(langutil::EVMVersion _minEVMVersion);
 
 bool loadVMs(CommonOptions const& _options);
 

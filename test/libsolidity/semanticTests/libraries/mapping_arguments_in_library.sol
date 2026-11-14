@@ -20,9 +20,6 @@ contract Test {
         return Lib.get(m, key);
     }
 }
-// ====
-// compileToEwasm: false
-// compileViaYul: also
 // ----
 // library: Lib
 // set(uint256,uint256): 1, 42 -> 0

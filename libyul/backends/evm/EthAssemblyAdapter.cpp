@@ -33,7 +33,6 @@
 #include <memory>
 #include <functional>
 
-using namespace std;
 using namespace solidity;
 using namespace solidity::yul;
 using namespace solidity::util;
@@ -96,7 +95,7 @@ void EthAssemblyAdapter::appendLinkerSymbol(std::string const& _linkerSymbol)
 
 void EthAssemblyAdapter::appendVerbatim(bytes _data, size_t _arguments, size_t _returnVariables)
 {
-	m_assembly.appendVerbatim(move(_data), _arguments, _returnVariables);
+	m_assembly.appendVerbatim(std::move(_data), _arguments, _returnVariables);
 }
 
 void EthAssemblyAdapter::appendJump(int _stackDiffAfter, JumpType _jumpType)
@@ -122,14 +121,14 @@ void EthAssemblyAdapter::appendAssemblySize()
 	m_assembly.appendProgramSize();
 }
 
-pair<shared_ptr<AbstractAssembly>, AbstractAssembly::SubID> EthAssemblyAdapter::createSubAssembly(string _name)
+std::pair<std::shared_ptr<AbstractAssembly>, AbstractAssembly::SubID> EthAssemblyAdapter::createSubAssembly(bool _creation, std::string _name)
 {
-	shared_ptr<evmasm::Assembly> assembly{make_shared<evmasm::Assembly>(std::move(_name))};
+	std::shared_ptr<evmasm::Assembly> assembly{std::make_shared<evmasm::Assembly>(m_assembly.evmVersion(), _creation, std::move(_name))};
 	auto sub = m_assembly.newSub(assembly);
-	return {make_shared<EthAssemblyAdapter>(*assembly), static_cast<size_t>(sub.data())};
+	return {std::make_shared<EthAssemblyAdapter>(*assembly), SubID{sub.data()}};
 }
 
-void EthAssemblyAdapter::appendDataOffset(vector<AbstractAssembly::SubID> const& _subPath)
+void EthAssemblyAdapter::appendDataOffset(std::vector<AbstractAssembly::SubID> const& _subPath)
 {
 	if (auto it = m_dataHashBySubId.find(_subPath[0]); it != m_dataHashBySubId.end())
 	{
@@ -141,7 +140,7 @@ void EthAssemblyAdapter::appendDataOffset(vector<AbstractAssembly::SubID> const&
 	m_assembly.pushSubroutineOffset(m_assembly.encodeSubPath(_subPath));
 }
 
-void EthAssemblyAdapter::appendDataSize(vector<AbstractAssembly::SubID> const& _subPath)
+void EthAssemblyAdapter::appendDataSize(std::vector<AbstractAssembly::SubID> const& _subPath)
 {
 	if (auto it = m_dataHashBySubId.find(_subPath[0]); it != m_dataHashBySubId.end())
 	{
@@ -156,7 +155,7 @@ void EthAssemblyAdapter::appendDataSize(vector<AbstractAssembly::SubID> const& _
 AbstractAssembly::SubID EthAssemblyAdapter::appendData(bytes const& _data)
 {
 	evmasm::AssemblyItem pushData = m_assembly.newData(_data);
-	SubID subID = m_nextDataCounter++;
+	SubID const subID{m_nextDataCounter++};
 	m_dataHashBySubId[subID] = pushData.data();
 	return subID;
 }
@@ -179,6 +178,11 @@ void EthAssemblyAdapter::appendImmutableAssignment(std::string const& _identifie
 void EthAssemblyAdapter::markAsInvalid()
 {
 	m_assembly.markAsInvalid();
+}
+
+langutil::EVMVersion EthAssemblyAdapter::evmVersion() const
+{
+	return m_assembly.evmVersion();
 }
 
 EthAssemblyAdapter::LabelID EthAssemblyAdapter::assemblyTagToIdentifier(evmasm::AssemblyItem const& _tag)

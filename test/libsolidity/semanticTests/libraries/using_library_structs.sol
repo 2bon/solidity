@@ -17,11 +17,8 @@ contract Test {
         b = data["abc"].b[19];
     }
 }
-// ====
-// compileToEwasm: false
-// compileViaYul: also
 // ----
 // library: Lib
 // f() -> 7, 8
-// gas irOptimized: 101869
-// gas legacy: 101504
+// gas irOptimized: 97571
+// gas legacy: 101428

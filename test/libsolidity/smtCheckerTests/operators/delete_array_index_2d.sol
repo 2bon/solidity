@@ -27,5 +27,6 @@ contract C
 // SMTIgnoreCex: yes
 // ----
 // Warning 6328: (315-335): CHC: Assertion violation might happen here.
-// Info 1180: Contract invariant(s) for :C:\n!(a.length <= 1)\n
+// Info 1391: CHC: 8 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.
 // Warning 4661: (315-335): BMC: Assertion violation happens here.

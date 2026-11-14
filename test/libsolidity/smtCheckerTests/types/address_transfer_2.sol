@@ -15,6 +15,9 @@ contract C
 // SMTEngine: all
 // SMTIgnoreCex: yes
 // ----
-// Warning 6328: (262-291): CHC: Assertion violation happens here.
-// Warning 1236: (184-199): BMC: Insufficient funds happens here.
-// Warning 1236: (203-218): BMC: Insufficient funds happens here.
+// Warning 9207: (184-194): 'transfer' is deprecated and scheduled for removal. Use 'call{value: <amount>}("")' instead.
+// Warning 9207: (203-213): 'transfer' is deprecated and scheduled for removal. Use 'call{value: <amount>}("")' instead.
+// Warning 8656: (184-199): CHC: Insufficient funds happens here.\nCounterexample:\n\nx = 100\na = 0x6532\nb = 0xffffffffffffffffffffffffffffffffffffed9d\n\nTransaction trace:\nC.constructor()\nC.f(100, 0x6532, 0xffffffffffffffffffffffffffffffffffffed9d)
+// Warning 8656: (203-218): CHC: Insufficient funds happens here.\nCounterexample:\n\nx = 100\na = 0x08c0\nb = 0x7992\n\nTransaction trace:\nC.constructor()\nC.f(100, 0x08c0, 0x7992)
+// Warning 6328: (262-291): CHC: Assertion violation happens here.\nCounterexample:\n\nx = 100\na = 0x08c1\nb = 0x08c0\n\nTransaction trace:\nC.constructor()\nC.f(100, 0x08c1, 0x08c0)
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

@@ -10,9 +10,6 @@ contract Main {
         r = s;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // set(string): 0x20, 5, "Julia" ->
 // get1() -> 0x20, 5, "Julia"

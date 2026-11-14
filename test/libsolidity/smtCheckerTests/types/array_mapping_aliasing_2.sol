@@ -34,13 +34,8 @@ contract C
 // ====
 // SMTEngine: all
 // SMTIgnoreCex: yes
+// SMTTargets: assert
 // ----
-// Warning 6368: (439-453): CHC: Out of bounds access happens here.
-// Warning 6368: (492-508): CHC: Out of bounds access happens here.
-// Warning 6368: (492-511): CHC: Out of bounds access happens here.
-// Warning 6368: (622-636): CHC: Out of bounds access happens here.
-// Warning 6368: (850-866): CHC: Out of bounds access happens here.
-// Warning 6368: (850-869): CHC: Out of bounds access happens here.
-// Warning 6328: (936-956): CHC: Assertion violation happens here.
-// Warning 6368: (1029-1043): CHC: Out of bounds access might happen here.
-// Info 1180: Contract invariant(s) for :C:\n!(severalMaps8.length <= 0)\n
+// Warning 6328: (936-956): CHC: Assertion violation happens here.\nCounterexample:\n\nx = 0\n\nTransaction trace:\nC.constructor()\nC.g(0)\n    C.f(map) -- counterexample incomplete; parameter name used instead of value -- internal call
+// Info 1391: CHC: 3 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

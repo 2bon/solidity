@@ -19,8 +19,5 @@ contract E is D {
     return super.g() + 1;
   }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // g() -> 1339

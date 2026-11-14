@@ -32,7 +32,7 @@ namespace solidity::frontend::test
 	T(Invalid, "invalid", 0)           \
 	T(EOS, "EOS", 0)                   \
 	T(Whitespace, "_", 0)              \
-	/* punctuations */                 \
+	/* punctuation */                  \
 	T(LParen, "(", 0)                  \
 	T(RParen, ")", 0)                  \
 	T(LBrack, "[", 0)                  \
@@ -215,9 +215,16 @@ struct FunctionCallExpectations
 			raw += param.rawBytes;
 		return raw;
 	}
-	/// Gas used by function call
-	/// Should have values for Yul, YulOptimized, Legacy and LegacyOptimized
-	std::map<std::string, u256> gasUsed;
+	/// Gas used by function call minus the portion spent on code deposits (which is tracked
+	/// separately, in @a gasUsedForCodeDeposit).
+	/// bytecode (and therefore the cost), except for EVM version. E.g. IR codegen without
+	/// optimization legacy codegen with optimization.
+	std::map<std::string, u256> gasUsedExcludingCode;
+
+	/// The portion of @a gasUsed spent on code deposits of newly created contracts.
+	/// May exceed @a gasUsed in rare corner cases due to refunds.
+	/// Keys must always match @a gasUsedExcludingCode.
+	std::map<std::string, u256> gasUsedForCodeDeposit;
 };
 
 /**
@@ -268,6 +275,7 @@ struct FunctionValue
 struct FunctionCall
 {
 	/// Signature of the function call, e.g. `f(uint256, uint256)`.
+	/// For a library deployment, this contains the library name.
 	std::string signature;
 	/// Optional value that can be sent with the call.
 	/// Value is expressed in wei, smallest unit of ether
@@ -313,6 +321,8 @@ struct FunctionCall
 	std::vector<std::string> expectedSideEffects{};
 	/// A textual representation of the actual side-effect of the function call.
 	std::vector<std::string> actualSideEffects{};
+	/// File name of the library. Always empty, unless this is a library deployment call.
+	std::string libraryFile{};
 };
 
 using Builtin = std::function<std::optional<bytes>(FunctionCall const&)>;

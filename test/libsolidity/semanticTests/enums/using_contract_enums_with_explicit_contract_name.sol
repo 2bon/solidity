@@ -5,9 +5,5 @@ contract test {
         _ret = test.Choice.B;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // answer() -> 1

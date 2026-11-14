@@ -98,6 +98,7 @@ class Identifier;
 class ElementaryTypeNameExpression;
 class Literal;
 class StructuredDocumentation;
+class StorageLayoutSpecifier;
 
 class VariableScope;
 

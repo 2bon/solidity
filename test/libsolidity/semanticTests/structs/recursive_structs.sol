@@ -14,9 +14,5 @@ contract C {
         return 1;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 1

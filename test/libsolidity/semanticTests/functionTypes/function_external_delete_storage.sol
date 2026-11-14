@@ -1,17 +1,19 @@
 contract C {
     function() external public x;
-    uint public y = 0;
 
-    function increment() public {
-        ++y;
-    }
+    function f() public {}
 
     function set() external {
-        x = this.increment;
+        x = this.f;
     }
 
-    function incrementIndirectly() public {
-        x();
+    function isF() external returns (bool) {
+        return x == this.f;
+    }
+
+    function isZero() external returns (bool) {
+        function() external zero;
+        return x == zero;
     }
 
     function deleteFunction() public {
@@ -19,21 +21,15 @@ contract C {
         delete x;
     }
 }
-// ====
-// compileViaYul: also
 // ----
-// x() -> 0
-// y() -> 0
-// increment() ->
-// y() -> 1
-// set() ->
-// x() -> 0xfdd67305928fcac8d213d1e47bfa6165cd0b87bd09de08a0000000000000000
-// increment() ->
-// y() -> 2
-// incrementIndirectly() ->
-// y() -> 3
+// isF() -> false
+// isZero() -> true
 // deleteFunction() ->
-// increment() ->
-// y() -> 4
-// incrementIndirectly() -> FAILURE
-// y() -> 4
+// isF() -> false
+// isZero() -> true
+// set() ->
+// isF() -> true
+// isZero() -> false
+// deleteFunction() ->
+// isF() -> false
+// isZero() -> true

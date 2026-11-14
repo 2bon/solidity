@@ -4,8 +4,5 @@ contract C {
         revert E(2, 7);
     }
 }
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // f() -> FAILURE, hex"85208890", 2, 7

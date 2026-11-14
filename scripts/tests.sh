@@ -83,9 +83,6 @@ done
 printTask "Testing Python scripts..."
 "$REPO_ROOT/test/pyscriptTests.py"
 
-printTask "Testing LSP..."
-"$REPO_ROOT/scripts/test_solidity_lsp.py" "${SOLIDITY_BUILD_DIR}/solc/solc"
-
 printTask "Running commandline tests..."
 # Only run in parallel if this is run on CI infrastructure
 if [[ -n "$CI" ]]
@@ -101,56 +98,38 @@ else
 fi
 
 
-EVM_VERSIONS="homestead byzantium"
-
-if [ -z "$CI" ]
-then
-    EVM_VERSIONS+=" constantinople petersburg istanbul berlin london"
-fi
-
-# And then run the Solidity unit-tests in the matrix combination of optimizer / no optimizer
-# and homestead / byzantium VM
+CURRENT_EVM_VERSION="osaka"
+# Run the Solidity unit-tests in the matrix combination of optimizer / no optimizer
 for optimize in "" "--optimize"
 do
-    for vm in $EVM_VERSIONS
+    for abiv1 in "no" "yes"
     do
-        FORCE_ABIV1_RUNS="no"
-        if [[ "$vm" == "london" ]]
+        force_abiv1_flag=()
+        if [[ "$abiv1" == "yes" ]]
         then
-            FORCE_ABIV1_RUNS="no yes" # run both in london
+            force_abiv1_flag=(--abiencoderv1)
         fi
-        for abiv1 in $FORCE_ABIV1_RUNS
-        do
-            force_abiv1_flag=()
-            if [[ "$abiv1" == "yes" ]]
+        printTask "--> Running tests using $optimize --evm-version $CURRENT_EVM_VERSION ${force_abiv1_flag[*]}..."
+
+        log=()
+        if [ -n "$log_directory" ]
+        then
+            if [ -n "$optimize" ]
             then
-                force_abiv1_flag=(--abiencoderv1)
+                log+=("--logger=JUNIT,error,$log_directory/opt_$CURRENT_EVM_VERSION.xml")
+            else
+                log+=("--logger=JUNIT,error,$log_directory/noopt_$CURRENT_EVM_VERSION.xml")
             fi
-            printTask "--> Running tests using $optimize --evm-version $vm ${force_abiv1_flag[*]}..."
+        fi
 
-            log=()
-            if [ -n "$log_directory" ]
-            then
-                if [ -n "$optimize" ]
-                then
-                    log+=("--logger=JUNIT,error,$log_directory/opt_$vm.xml")
-                else
-                    log+=("--logger=JUNIT,error,$log_directory/noopt_$vm.xml")
-                fi
-            fi
+        set +e
+        "${SOLIDITY_BUILD_DIR}"/test/soltest --show-progress "${log[@]}" -- --testpath "$REPO_ROOT"/test "$optimize" --evm-version "$CURRENT_EVM_VERSION" "${SMT_FLAGS[@]}" "${force_abiv1_flag[@]}"
 
-            EWASM_ARGS=""
-            [ "${vm}" = "byzantium" ] && [ "${optimize}" = "" ] && EWASM_ARGS="--ewasm"
+        if test "0" -ne "$?"; then
+            exit 1
+        fi
+        set -e
 
-            set +e
-            "${SOLIDITY_BUILD_DIR}"/test/soltest --show-progress "${log[@]}" -- ${EWASM_ARGS} --testpath "$REPO_ROOT"/test "$optimize" --evm-version "$vm" "${SMT_FLAGS[@]}" "${force_abiv1_flag[@]}"
-
-            if test "0" -ne "$?"; then
-                exit 1
-            fi
-            set -e
-
-        done
     done
 done
 

@@ -22,31 +22,33 @@
 set -e
 
 source scripts/common.sh
-source test/externalTests/common.sh
+source scripts/externalTests/common.sh
 
 REPO_ROOT=$(realpath "$(dirname "$0")/../..")
 
 verify_input "$@"
 BINARY_TYPE="$1"
-BINARY_PATH="$2"
+BINARY_PATH="$(realpath "$2")"
 SELECTED_PRESETS="$3"
 
 function compile_fn { npm run compile; }
-function test_fn { npx --no hardhat --no-compile test; }
+function test_fn {
+    # The default timeout of 20000 ms is too short for unoptimized code (https://github.com/argotorg/solidity/pull/12765).
+    TEST_TIMEOUT=100000 npx --no hardhat --no-compile test
+}
 
 function euler_test
 {
     local repo="https://github.com/euler-xyz/euler-contracts"
-    local ref_type=branch
     local ref="master"
     local config_file="hardhat.config.js"
 
     local compile_only_presets=()
     local settings_presets=(
         "${compile_only_presets[@]}"
-        #ir-no-optimize           # Compilation fails with "YulException: Variable var_utilisation_307 is 6 slot(s) too deep inside the stack."
-        #ir-optimize-evm-only     # Compilation fails with "YulException: Variable var_utilisation_307 is 6 slot(s) too deep inside the stack."
-        #ir-optimize-evm+yul      # Compilation fails with "YulException: Variable var_status_mpos is 3 too deep in the stack"
+        #ir-no-optimize           # Compilation fails with "YulException: Variable var_v_mpos is 4 too deep in the stack". No memoryguard was present.
+        #ir-optimize-evm-only     # Compilation fails with "YulException: Variable var_v_mpos is 4 too deep in the stack". No memoryguard was present.
+        ir-optimize-evm+yul
         legacy-optimize-evm-only
         legacy-optimize-evm+yul
         legacy-no-optimize
@@ -56,15 +58,21 @@ function euler_test
     print_presets_or_exit "$SELECTED_PRESETS"
 
     setup_solc "$DIR" "$BINARY_TYPE" "$BINARY_PATH"
-    download_project "$repo" "$ref_type" "$ref" "$DIR"
+    download_project "$repo" "$ref" "$DIR"
+
+    # Disable tests that won't pass on the ir presets due to Hardhat heuristics. Note that this also disables
+    # them for other presets but that's fine - we want same code run for benchmarks to be comparable.
+    # TODO: Remove this when https://github.com/NomicFoundation/hardhat/issues/3365 gets fixed.
+    sed -i "/expectError: 'JUNK_UPGRADE_TEST_FAILURE'/d" test/moduleUpgrade.js
+    sed -i "/et\.expect(errMsg)\.to\.contain('e\/collateral-violation');/d" test/flashLoanNative.js
 
     neutralize_package_lock
     neutralize_package_json_hooks
     force_hardhat_compiler_binary "$config_file" "$BINARY_TYPE" "$BINARY_PATH"
     force_hardhat_compiler_settings "$config_file" "$(first_word "$SELECTED_PRESETS")"
     force_hardhat_unlimited_contract_size "$config_file"
+    npm install @uniswap/v3-sdk@3.29.1 # TODO: Remove after https://github.com/Uniswap/sdks/issues/557 is resolved
     npm install
-
     replace_version_pragmas
     neutralize_packaged_contracts
 

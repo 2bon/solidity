@@ -23,7 +23,7 @@
 namespace solidity::yul::test
 {
 
-class EVMCodeTransformTest: public solidity::frontend::test::TestCase
+class EVMCodeTransformTest: public solidity::frontend::test::EVMVersionRestrictedTestCase
 {
 public:
 	static std::unique_ptr<TestCase> create(Config const& _config)
@@ -34,6 +34,7 @@ public:
 	TestResult run(std::ostream& _stream, std::string const& _linePrefix = "", bool const _formatted = false) override;
 private:
 	bool m_stackOpt = false;
+	bool m_viaSSACFG = false;
 };
 
 }

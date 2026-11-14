@@ -22,4 +22,5 @@ contract C {
 // SMTEngine: all
 // SMTIgnoreOS: macos
 // ----
-// Info 1180: Contract invariant(s) for :C:\n!(s1.arr.length <= 0)\n!(s2.arr.length <= 0)\n(((s2.arr[0].length + ((- 1) * s1.arr[0].length)) <= 0) && ((s1.arr[0].length + ((- 1) * s2.arr[0].length)) <= 0))\n
+// Info 1391: CHC: 9 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

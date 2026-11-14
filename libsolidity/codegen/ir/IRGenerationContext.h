@@ -23,7 +23,6 @@
 
 #include <libsolidity/ast/AST.h>
 #include <libsolidity/codegen/ir/IRVariable.h>
-#include <libsolidity/interface/OptimiserSettings.h>
 #include <libsolidity/interface/DebugSettings.h>
 
 #include <libsolidity/codegen/MultiUseYulFunctionCollector.h>
@@ -38,7 +37,7 @@
 #include <set>
 #include <string>
 #include <memory>
-#include <vector>
+#include <deque>
 
 namespace solidity::frontend
 {
@@ -46,20 +45,8 @@ namespace solidity::frontend
 class YulUtilFunctions;
 class ABIFunctions;
 
-struct AscendingFunctionIDCompare
-{
-	bool operator()(FunctionDefinition const* _f1, FunctionDefinition const* _f2) const
-	{
-		// NULLs always first.
-		if (_f1 != nullptr && _f2 != nullptr)
-			return _f1->id() < _f2->id();
-		else
-			return _f1 == nullptr;
-	}
-};
-
-using DispatchSet = std::set<FunctionDefinition const*, AscendingFunctionIDCompare>;
-using InternalDispatchMap = std::map<YulArity, DispatchSet>;
+using DispatchQueue = std::deque<FunctionDefinition const*>;
+using InternalDispatchMap = std::map<YulArity, DispatchQueue>;
 
 /**
  * Class that contains contextual information during IR generation.
@@ -73,7 +60,6 @@ public:
 		langutil::EVMVersion _evmVersion,
 		ExecutionContext _executionContext,
 		RevertStrings _revertStrings,
-		OptimiserSettings _optimiserSettings,
 		std::map<std::string, unsigned> _sourceIndices,
 		langutil::DebugInfoSelection const& _debugInfoSelection,
 		langutil::CharStreamProvider const* _soliditySourceProvider
@@ -81,7 +67,6 @@ public:
 		m_evmVersion(_evmVersion),
 		m_executionContext(_executionContext),
 		m_revertStrings(_revertStrings),
-		m_optimiserSettings(std::move(_optimiserSettings)),
 		m_sourceIndices(std::move(_sourceIndices)),
 		m_debugInfoSelection(_debugInfoSelection),
 		m_soliditySourceProvider(_soliditySourceProvider)
@@ -117,10 +102,12 @@ public:
 	/// @returns the reserved memory for storing the value of the
 	/// immutable @a _variable during contract creation.
 	size_t immutableMemoryOffset(VariableDeclaration const& _variable) const;
+	size_t immutableMemoryOffsetRelative(VariableDeclaration const& _variable) const;
 	/// @returns the reserved memory and resets it to mark it as used.
 	/// Intended to be used only once for initializing the free memory pointer
 	/// to after the area used for immutables.
 	size_t reservedMemory();
+	size_t reservedMemorySize() const;
 
 	void addStateVariable(VariableDeclaration const& _varDecl, u256 _storageOffset, unsigned _byteOffset);
 	bool isStateVariable(VariableDeclaration const& _varDecl) const { return m_stateVariables.count(&_varDecl); }
@@ -151,25 +138,15 @@ public:
 	langutil::EVMVersion evmVersion() const { return m_evmVersion; }
 	ExecutionContext executionContext() const { return m_executionContext; }
 
-	void setArithmetic(Arithmetic _value) { m_arithmetic = _value; }
-	Arithmetic arithmetic() const { return m_arithmetic; }
-
 	ABIFunctions abiFunctions();
 
 	RevertStrings revertStrings() const { return m_revertStrings; }
 
-	std::set<ContractDefinition const*, ASTNode::CompareByID>& subObjectsCreated() { return m_subObjects; }
+	util::UniqueVector<ContractDefinition const*> const& subObjectsCreated() const { return m_subObjects; }
+	void addSubObject(ContractDefinition const* _contractDefinition) { m_subObjects.pushBack(_contractDefinition); }
 
-	bool inlineAssemblySeen() const { return m_inlineAssemblySeen; }
-	void setInlineAssemblySeen() { m_inlineAssemblySeen = true; }
-
-	/// @returns the runtime ID to be used for the function in the dispatch routine
-	/// and for internal function pointers.
-	/// @param _requirePresent if false, generates a new ID if not yet done.
-	uint64_t internalFunctionID(FunctionDefinition const& _function, bool _requirePresent);
-	/// Copies the internal function IDs from the @a _other. For use in transferring
-	/// function IDs from constructor code to deployed code.
-	void copyFunctionIDsFrom(IRGenerationContext const& _other);
+	bool memoryUnsafeInlineAssemblySeen() const { return m_memoryUnsafeInlineAssemblySeen; }
+	void setMemoryUnsafeInlineAssemblySeen() { m_memoryUnsafeInlineAssemblySeen = true; }
 
 	std::map<std::string, unsigned> const& sourceIndices() const { return m_sourceIndices; }
 	void markSourceUsed(std::string const& _name) { m_usedSourceNames.insert(_name); }
@@ -179,12 +156,12 @@ public:
 
 	langutil::DebugInfoSelection debugInfoSelection() const { return m_debugInfoSelection; }
 	langutil::CharStreamProvider const* soliditySourceProvider() const { return m_soliditySourceProvider; }
+	std::map<VariableDeclaration const*, size_t> const& immutableVariables() const { return m_immutableVariables; }
 
 private:
 	langutil::EVMVersion m_evmVersion;
 	ExecutionContext m_executionContext;
 	RevertStrings m_revertStrings;
-	OptimiserSettings m_optimiserSettings;
 	std::map<std::string, unsigned> m_sourceIndices;
 	std::set<std::string> m_usedSourceNames;
 	ContractDefinition const* m_mostDerivedContract = nullptr;
@@ -199,30 +176,25 @@ private:
 	std::map<VariableDeclaration const*, std::pair<u256, unsigned>> m_stateVariables;
 	MultiUseYulFunctionCollector m_functions;
 	size_t m_varCounter = 0;
-	/// Whether to use checked or wrapping arithmetic.
-	Arithmetic m_arithmetic = Arithmetic::Checked;
 
-	/// Flag indicating whether any inline assembly block was seen.
-	bool m_inlineAssemblySeen = false;
+	/// Flag indicating whether any memory-unsafe inline assembly block was seen.
+	bool m_memoryUnsafeInlineAssemblySeen = false;
 
 	/// Function definitions queued for code generation. They're the Solidity functions whose calls
 	/// were discovered by the IR generator during AST traversal.
 	/// Note that the queue gets filled in a lazy way - new definitions can be added while the
 	/// collected ones get removed and traversed.
-	/// The order and duplicates are irrelevant here (hence std::set rather than std::queue) as
-	/// long as the order of Yul functions in the generated code is deterministic and the same on
-	/// all platforms - which is a property guaranteed by MultiUseYulFunctionCollector.
-	DispatchSet m_functionGenerationQueue;
+	/// The order and duplicates are relevant here
+	/// (see: IRGenerationContext::[enqueue|dequeue]FunctionForCodeGeneration)
+	DispatchQueue m_functionGenerationQueue;
 
 	/// Collection of functions that need to be callable via internal dispatch.
 	/// Note that having a key with an empty set of functions is a valid situation. It means that
 	/// the code contains a call via a pointer even though a specific function is never assigned to it.
 	/// It will fail at runtime but the code must still compile.
 	InternalDispatchMap m_internalDispatchMap;
-	/// Map used by @a internalFunctionID.
-	std::map<int64_t, uint64_t> m_functionIDs;
 
-	std::set<ContractDefinition const*, ASTNode::CompareByID> m_subObjects;
+	util::UniqueVector<ContractDefinition const*> m_subObjects;
 
 	langutil::DebugInfoSelection m_debugInfoSelection = {};
 	langutil::CharStreamProvider const* m_soliditySourceProvider = nullptr;

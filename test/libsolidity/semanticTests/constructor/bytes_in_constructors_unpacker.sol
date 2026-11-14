@@ -6,12 +6,15 @@ contract Test {
         m_s = s;
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // constructor(): 7, 0x40, 78, "abcdefghijklmnopqrstuvwxyzabcdef", "ghijklmnopqrstuvwxyzabcdefghijkl", "mnopqrstuvwxyz" ->
-// gas irOptimized: 291443
-// gas legacy: 309842
-// gas legacyOptimized: 260801
+// gas irOptimized: 181613
+// gas irOptimized code: 78200
+// gas legacy: 195484
+// gas legacy code: 109400
+// gas legacyOptimized: 181853
+// gas legacyOptimized code: 71400
+// gas ssaCFGOptimized: 181526
+// gas ssaCFGOptimized code: 76600
 // m_x() -> 7
 // m_s() -> 0x20, 78, "abcdefghijklmnopqrstuvwxyzabcdef", "ghijklmnopqrstuvwxyzabcdefghijkl", "mnopqrstuvwxyz"

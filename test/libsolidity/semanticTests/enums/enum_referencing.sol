@@ -27,9 +27,6 @@ contract C is I {
         return L.g();
     }
 }
-// ====
-// compileViaYul: also
-// compileToEwasm: false
 // ----
 // library: L
 // f() -> 3

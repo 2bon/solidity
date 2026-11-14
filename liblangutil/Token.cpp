@@ -40,11 +40,11 @@
 // You should have received a copy of the GNU General Public License
 // along with solidity.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <liblangutil/Token.h>
 #include <liblangutil/Exceptions.h>
-#include <map>
+#include <liblangutil/Token.h>
+#include <libsolutil/StringUtils.h>
 
-using namespace std;
+#include <map>
 
 namespace solidity::langutil
 {
@@ -69,25 +69,25 @@ std::string ElementaryTypeNameToken::toString(bool const& tokenValue) const
 
 void ElementaryTypeNameToken::assertDetails(Token _baseType, unsigned const& _first, unsigned const& _second)
 {
-	solAssert(TokenTraits::isElementaryTypeName(_baseType), "Expected elementary type name: " + string(TokenTraits::toString(_baseType)));
+	solAssert(TokenTraits::isElementaryTypeName(_baseType), "Expected elementary type name: " + std::string(TokenTraits::toString(_baseType)));
 	if (_baseType == Token::BytesM)
 	{
 		solAssert(_second == 0, "There should not be a second size argument to type bytesM.");
-		solAssert(_first <= 32, "No elementary type bytes" + to_string(_first) + ".");
+		solAssert(_first <= 32, "No elementary type bytes" + std::to_string(_first) + ".");
 	}
 	else if (_baseType == Token::UIntM || _baseType == Token::IntM)
 	{
-		solAssert(_second == 0, "There should not be a second size argument to type " + string(TokenTraits::toString(_baseType)) + ".");
+		solAssert(_second == 0, "There should not be a second size argument to type " + std::string(TokenTraits::toString(_baseType)) + ".");
 		solAssert(
 			_first <= 256 && _first % 8 == 0,
-			"No elementary type " + string(TokenTraits::toString(_baseType)) + to_string(_first) + "."
+			"No elementary type " + std::string(TokenTraits::toString(_baseType)) + std::to_string(_first) + "."
 		);
 	}
 	else if (_baseType == Token::UFixedMxN || _baseType == Token::FixedMxN)
 	{
 		solAssert(
 			_first >= 8 && _first <= 256 && _first % 8 == 0 && _second <= 80,
-			"No elementary type " + string(TokenTraits::toString(_baseType)) + to_string(_first) + "x" + to_string(_second) + "."
+			"No elementary type " + std::string(TokenTraits::toString(_baseType)) + std::to_string(_first) + "x" + std::to_string(_second) + "."
 		);
 	}
 	else
@@ -134,29 +134,64 @@ std::string friendlyName(Token tok)
 }
 
 
-static Token keywordByName(string const& _name)
+static Token keywordByName(std::string_view const _name)
 {
 	// The following macros are used inside TOKEN_LIST and cause non-keyword tokens to be ignored
 	// and keywords to be put inside the keywords variable.
 #define KEYWORD(name, string, precedence) {string, Token::name},
 #define TOKEN(name, string, precedence)
-	static map<string, Token> const keywords({TOKEN_LIST(TOKEN, KEYWORD)});
+	static std::map<std::string, Token, std::less<>> const keywords({TOKEN_LIST(TOKEN, KEYWORD)});
 #undef KEYWORD
 #undef TOKEN
 	auto it = keywords.find(_name);
 	return it == keywords.end() ? Token::Identifier : it->second;
 }
 
-bool isYulKeyword(string const& _literal)
+bool isYulKeyword(std::string_view const _literal)
 {
-	return _literal == "leave" || isYulKeyword(keywordByName(_literal));
+	return isYulKeyword(keywordByName(_literal));
 }
 
-tuple<Token, unsigned int, unsigned int> fromIdentifierOrKeyword(string const& _literal)
+bool isFutureSolidityKeyword(std::string_view const _literal)
+{
+	return
+		_literal == "transient" ||
+		_literal == "layout" ||
+		_literal == "at" ||
+		_literal == "error" ||
+		_literal == "super" ||
+		_literal == "this" ||
+		isFutureYulKeyword(_literal);
+}
+
+bool isFutureYulKeyword(std::string_view const _literal)
+{
+	return _literal == "leave";
+}
+
+bool isFutureYulReservedIdentifier(std::string_view const _literal)
+{
+	return
+		_literal == "basefee" ||
+		_literal == "blobbasefee" ||
+		_literal == "blobhash" ||
+		_literal == "clz" ||
+		_literal == "dupn" ||
+		_literal == "exchange" ||
+		_literal == "mcopy" ||
+		_literal == "memoryguard" ||
+		_literal == "prevrandao" ||
+		_literal == "slotnum" ||
+		_literal == "swapn" ||
+		_literal == "tload" ||
+		_literal == "tstore";
+}
+
+std::tuple<Token, unsigned int, unsigned int> fromIdentifierOrKeyword(std::string const& _literal)
 {
 	// Used for `bytesM`, `uintM`, `intM`, `fixedMxN`, `ufixedMxN`.
 	// M/N must be shortest representation. M can never be 0. N can be zero.
-	auto parseSize = [](string::const_iterator _begin, string::const_iterator _end) -> int
+	auto parseSize = [](std::string::const_iterator _begin, std::string::const_iterator _end) -> int
 	{
 		// No number.
 		if (distance(_begin, _end) == 0)
@@ -180,26 +215,26 @@ tuple<Token, unsigned int, unsigned int> fromIdentifierOrKeyword(string const& _
 		return ret;
 	};
 
-	auto positionM = find_if(_literal.begin(), _literal.end(), ::isdigit);
+	auto positionM = find_if(_literal.begin(), _literal.end(), util::isDigit);
 	if (positionM != _literal.end())
 	{
-		string baseType(_literal.begin(), positionM);
-		auto positionX = find_if_not(positionM, _literal.end(), ::isdigit);
+		std::string baseType(_literal.begin(), positionM);
+		auto positionX = find_if_not(positionM, _literal.end(), util::isDigit);
 		int m = parseSize(positionM, positionX);
 		Token keyword = keywordByName(baseType);
 		if (keyword == Token::Bytes)
 		{
 			if (0 < m && m <= 32 && positionX == _literal.end())
-				return make_tuple(Token::BytesM, m, 0);
+				return std::make_tuple(Token::BytesM, m, 0);
 		}
 		else if (keyword == Token::UInt || keyword == Token::Int)
 		{
 			if (0 < m && m <= 256 && m % 8 == 0 && positionX == _literal.end())
 			{
 				if (keyword == Token::UInt)
-					return make_tuple(Token::UIntM, m, 0);
+					return std::make_tuple(Token::UIntM, m, 0);
 				else
-					return make_tuple(Token::IntM, m, 0);
+					return std::make_tuple(Token::IntM, m, 0);
 			}
 		}
 		else if (keyword == Token::UFixed || keyword == Token::Fixed)
@@ -208,7 +243,7 @@ tuple<Token, unsigned int, unsigned int> fromIdentifierOrKeyword(string const& _
 				positionM < positionX &&
 				positionX < _literal.end() &&
 				*positionX == 'x' &&
-				all_of(positionX + 1, _literal.end(), ::isdigit)
+				all_of(positionX + 1, _literal.end(), util::isDigit)
 			) {
 				int n = parseSize(positionX + 1, _literal.end());
 				if (
@@ -216,16 +251,16 @@ tuple<Token, unsigned int, unsigned int> fromIdentifierOrKeyword(string const& _
 					0 <= n && n <= 80
 				) {
 					if (keyword == Token::UFixed)
-						return make_tuple(Token::UFixedMxN, m, n);
+						return std::make_tuple(Token::UFixedMxN, m, n);
 					else
-						return make_tuple(Token::FixedMxN, m, n);
+						return std::make_tuple(Token::FixedMxN, m, n);
 				}
 			}
 		}
-		return make_tuple(Token::Identifier, 0, 0);
+		return std::make_tuple(Token::Identifier, 0, 0);
 	}
 
-	return make_tuple(keywordByName(_literal), 0, 0);
+	return std::make_tuple(keywordByName(_literal), 0, 0);
 }
 
 }

@@ -16,7 +16,7 @@ contract C {
     }
 }
 // ====
-// compileViaYul: also
 // ----
 // f() -> 16
-// gas legacy: 103488
+// gas legacy: 78477
+// gas legacy code: 23600

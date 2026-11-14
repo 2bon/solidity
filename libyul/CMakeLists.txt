@@ -1,19 +1,3 @@
-# This will re-generate the polyfill headers, if any file within libyul/backends/wasm/polyfill/ was modified.
-set_directory_properties(PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/libyul/backends/wasm/polyfill/)
-
-set(POLYFILLS Arithmetic Bitwise Comparison Conversion Interface Keccak Logical Memory)
-set(GENERATED_POLYFILL_HEADERS)
-foreach(polyfill IN LISTS POLYFILLS)
-	set(POLYFILL_FILE ${CMAKE_SOURCE_DIR}/libyul/backends/wasm/polyfill/${polyfill}.yul)
-	file(READ ${POLYFILL_FILE} EWASM_POLYFILL_CONTENT HEX)
-	string(REGEX MATCHALL ".." EWASM_POLYFILL_CONTENT "${EWASM_POLYFILL_CONTENT}")
-	string(REGEX REPLACE ";" ",\n\t0x" EWASM_POLYFILL_CONTENT "${EWASM_POLYFILL_CONTENT}")
-	set(EWASM_POLYFILL_CONTENT "0x${EWASM_POLYFILL_CONTENT}")
-	set(EWASM_POLYFILL_NAME ${polyfill})
-	configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/ewasm_polyfill.in" ${CMAKE_BINARY_DIR}/include/ewasmPolyfills/${polyfill}.h @ONLY)
-	list(APPEND GENERATED_POLYFILL_HEADERS ${CMAKE_BINARY_DIR}/include/ewasmPolyfills/${polyfill}.h)
-endforeach()
-
 add_library(yul
 	${GENERATED_POLYFILL_HEADERS}
 
@@ -21,7 +5,10 @@ add_library(yul
 	AsmAnalysis.h
 	AsmAnalysisInfo.h
 	AST.h
+	AST.cpp
 	ASTForward.h
+	ASTLabelRegistry.cpp
+	ASTLabelRegistry.h
 	AsmJsonConverter.h
 	AsmJsonConverter.cpp
 	AsmJsonImporter.h
@@ -30,8 +17,9 @@ add_library(yul
 	AsmParser.h
 	AsmPrinter.cpp
 	AsmPrinter.h
-	AssemblyStack.h
-	AssemblyStack.cpp
+	Builtins.h
+	YulStack.h
+	YulStack.cpp
 	CompilabilityChecker.cpp
 	CompilabilityChecker.h
 	ControlFlowSideEffects.h
@@ -44,6 +32,8 @@ add_library(yul
 	FunctionReferenceResolver.h
 	Object.cpp
 	Object.h
+	ObjectOptimizer.cpp
+	ObjectOptimizer.h
 	ObjectParser.cpp
 	ObjectParser.h
 	Scope.cpp
@@ -52,6 +42,7 @@ add_library(yul
 	ScopeFiller.h
 	Utilities.cpp
 	Utilities.h
+	YulName.h
 	YulString.h
 	backends/evm/AbstractAssembly.h
 	backends/evm/AsmCodeGen.cpp
@@ -63,6 +54,8 @@ add_library(yul
 	backends/evm/ControlFlowGraphBuilder.h
 	backends/evm/EthAssemblyAdapter.cpp
 	backends/evm/EthAssemblyAdapter.h
+	backends/evm/EVMBuiltins.cpp
+	backends/evm/EVMBuiltins.h
 	backends/evm/EVMCodeTransform.cpp
 	backends/evm/EVMCodeTransform.h
 	backends/evm/EVMDialect.cpp
@@ -80,20 +73,83 @@ add_library(yul
 	backends/evm/StackLayoutGenerator.h
 	backends/evm/VariableReferenceCounter.h
 	backends/evm/VariableReferenceCounter.cpp
-	backends/wasm/EVMToEwasmTranslator.cpp
-	backends/wasm/EVMToEwasmTranslator.h
-	backends/wasm/BinaryTransform.cpp
-	backends/wasm/BinaryTransform.h
-	backends/wasm/TextTransform.cpp
-	backends/wasm/TextTransform.h
-	backends/wasm/WasmCodeTransform.cpp
-	backends/wasm/WasmCodeTransform.h
-	backends/wasm/WasmDialect.cpp
-	backends/wasm/WasmDialect.h
-	backends/wasm/WasmObjectCompiler.cpp
-	backends/wasm/WasmObjectCompiler.h
-	backends/wasm/WordSizeTransform.cpp
-	backends/wasm/WordSizeTransform.h
+	backends/evm/ssa/BridgeFinder.h
+	backends/evm/ssa/CallGraph.cpp
+	backends/evm/ssa/CallGraph.h
+	backends/evm/ssa/CodeTransform.cpp
+	backends/evm/ssa/CodeTransform.h
+	backends/evm/ssa/ControlFlowGraphs.cpp
+	backends/evm/ssa/ControlFlowGraphs.h
+	backends/evm/ssa/InstructionStore.h
+	backends/evm/ssa/JunkAdmittingBlocksFinder.cpp
+	backends/evm/ssa/JunkAdmittingBlocksFinder.h
+	backends/evm/ssa/LivenessAnalysis.cpp
+	backends/evm/ssa/LivenessAnalysis.h
+	backends/evm/ssa/PhiInverse.cpp
+	backends/evm/ssa/PhiInverse.h
+	backends/evm/ssa/SSACFGLoopNestingForest.cpp
+	backends/evm/ssa/SSACFGLoopNestingForest.h
+	backends/evm/ssa/SSACFG.cpp
+	backends/evm/ssa/SSACFG.h
+	backends/evm/ssa/SSACFGBuilder.cpp
+	backends/evm/ssa/SSACFGBuilder.h
+	backends/evm/ssa/SSACFGDebugInfo.h
+	backends/evm/ssa/SSACFGTypes.cpp
+	backends/evm/ssa/SSACFGTypes.h
+	backends/evm/ssa/ShuffleTrace.cpp
+	backends/evm/ssa/ShuffleTrace.h
+	backends/evm/ssa/Stack.h
+	backends/evm/ssa/StackLayout.h
+	backends/evm/ssa/StackLayoutGenerator.cpp
+	backends/evm/ssa/StackLayoutGenerator.h
+	backends/evm/ssa/StackSlot.cpp
+	backends/evm/ssa/StackSlot.h
+	backends/evm/ssa/StackSlotLiveness.h
+	backends/evm/ssa/util/UseCountSet.h
+	backends/evm/ssa/util/TLSFFreeList.h
+	backends/evm/ssa/StackUtils.cpp
+	backends/evm/ssa/StackUtils.h
+	backends/evm/ssa/analysis/DepthFirstSpanningTree.cpp
+	backends/evm/ssa/analysis/DepthFirstSpanningTree.h
+	backends/evm/ssa/analysis/DominatorTree.cpp
+	backends/evm/ssa/analysis/DominatorTree.h
+	backends/evm/ssa/analysis/ReducibilityCheck.cpp
+	backends/evm/ssa/analysis/ReducibilityCheck.h
+	backends/evm/ssa/io/DotExporterBase.cpp
+	backends/evm/ssa/io/DotExporterBase.h
+	backends/evm/ssa/io/Keywords.cpp
+	backends/evm/ssa/io/Keywords.h
+	backends/evm/ssa/io/Parser.cpp
+	backends/evm/ssa/io/Parser.h
+	backends/evm/ssa/io/Printer.cpp
+	backends/evm/ssa/io/Printer.h
+	backends/evm/ssa/spill/Emitter.h
+	backends/evm/ssa/spill/MemoryAddressing.cpp
+	backends/evm/ssa/spill/MemoryAddressing.h
+	backends/evm/ssa/spill/SpillSet.cpp
+	backends/evm/ssa/spill/SpillSet.h
+	backends/evm/ssa/stack/InstructionStackIn.cpp
+	backends/evm/ssa/stack/InstructionStackIn.h
+	backends/evm/ssa/stack/Shuffler.cpp
+	backends/evm/ssa/stack/Shuffler.h
+	backends/evm/ssa/transform/ConstantConditionFolder.cpp
+	backends/evm/ssa/transform/ConstantConditionFolder.h
+	backends/evm/ssa/transform/CriticalEdgeBreaker.cpp
+	backends/evm/ssa/transform/CriticalEdgeBreaker.h
+	backends/evm/ssa/transform/IdentityAndNopRemover.cpp
+	backends/evm/ssa/transform/IdentityAndNopRemover.h
+	backends/evm/ssa/transform/JumpThreader.cpp
+	backends/evm/ssa/transform/JumpThreader.h
+	backends/evm/ssa/transform/OptimizationPipeline.cpp
+	backends/evm/ssa/transform/OptimizationPipeline.h
+	backends/evm/ssa/transform/Outliner.cpp
+	backends/evm/ssa/transform/Outliner.h
+	backends/evm/ssa/transform/TrivialPhiEliminator.cpp
+	backends/evm/ssa/transform/TrivialPhiEliminator.h
+	backends/evm/ssa/transform/UnreachableBlockCleaner.cpp
+	backends/evm/ssa/transform/UnreachableBlockCleaner.h
+	backends/evm/ssa/transform/UseCounts.cpp
+	backends/evm/ssa/transform/UseCounts.h
 	optimiser/ASTCopier.cpp
 	optimiser/ASTCopier.h
 	optimiser/ASTWalker.cpp
@@ -154,12 +210,12 @@ add_library(yul
 	optimiser/InlinableExpressionFunctionFinder.h
 	optimiser/KnowledgeBase.cpp
 	optimiser/KnowledgeBase.h
+	optimiser/LabelIDDispenser.cpp
+	optimiser/LabelIDDispenser.h
 	optimiser/LoadResolver.cpp
 	optimiser/LoadResolver.h
 	optimiser/LoopInvariantCodeMotion.cpp
 	optimiser/LoopInvariantCodeMotion.h
-	optimiser/MainFunction.cpp
-	optimiser/MainFunction.h
 	optimiser/Metrics.cpp
 	optimiser/Metrics.h
 	optimiser/NameCollector.cpp
@@ -173,16 +229,14 @@ add_library(yul
 	optimiser/OptimiserStep.h
 	optimiser/OptimizerUtilities.cpp
 	optimiser/OptimizerUtilities.h
-	optimiser/ReasoningBasedSimplifier.cpp
-	optimiser/ReasoningBasedSimplifier.h
 	optimiser/UnusedAssignEliminator.cpp
 	optimiser/UnusedAssignEliminator.h
 	optimiser/UnusedStoreBase.cpp
 	optimiser/UnusedStoreBase.h
+	optimiser/UnusedStoreEliminator.cpp
+	optimiser/UnusedStoreEliminator.h
 	optimiser/Rematerialiser.cpp
 	optimiser/Rematerialiser.h
-	optimiser/SMTSolver.cpp
-	optimiser/SMTSolver.h
 	optimiser/SSAReverser.cpp
 	optimiser/SSAReverser.h
 	optimiser/SSATransform.cpp
@@ -207,8 +261,6 @@ add_library(yul
 	optimiser/Suite.h
 	optimiser/SyntacticalEquality.cpp
 	optimiser/SyntacticalEquality.h
-	optimiser/TypeInfo.cpp
-	optimiser/TypeInfo.h
 	optimiser/UnusedFunctionParameterPruner.cpp
 	optimiser/UnusedFunctionParameterPruner.h
 	optimiser/UnusedFunctionsCommon.h

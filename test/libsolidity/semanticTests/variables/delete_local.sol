@@ -5,8 +5,5 @@ contract test {
         res = v;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // delLocal() -> 0

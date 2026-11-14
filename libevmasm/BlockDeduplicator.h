@@ -24,9 +24,10 @@
 
 #pragma once
 
+#include <libevmasm/SubAssemblyID.h>
+
 #include <libsolutil/Common.h>
 #include <libsolutil/Numeric.h>
-
 
 #include <cstddef>
 #include <vector>
@@ -52,14 +53,14 @@ public:
 	/// @returns the tags that were replaced.
 	std::map<u256, u256> const& replacedTags() const { return m_replacedTags; }
 
-	/// Replaces all PushTag operations insied @a _items that match a key in
-	/// @a _replacements by the respective value. If @a _subID is not -1, only
+	/// Replaces all PushTag operations inside @a _items that match a key in
+	/// @a _replacements by the respective value. If @a _subID is not empty, only
 	/// apply the replacement for foreign tags from this sub id.
 	/// @returns true iff a replacement was performed.
 	static bool applyTagReplacement(
 		AssemblyItems& _items,
 		std::map<u256, u256> const& _replacements,
-		size_t _subID = size_t(-1)
+		SubAssemblyID _subID = {}
 	);
 
 private:
@@ -74,6 +75,7 @@ private:
 		using difference_type = std::ptrdiff_t;
 		using pointer = AssemblyItem const*;
 		using reference = AssemblyItem const&;
+		BlockIterator() = default;
 		BlockIterator(
 			AssemblyItems::const_iterator _it,
 			AssemblyItems::const_iterator _end,
@@ -82,13 +84,14 @@ private:
 		):
 			it(_it), end(_end), replaceItem(_replaceItem), replaceWith(_replaceWith) {}
 		BlockIterator& operator++();
+		BlockIterator operator++(int) { auto tmp = *this; ++*this; return tmp; }
 		bool operator==(BlockIterator const& _other) const { return it == _other.it; }
 		bool operator!=(BlockIterator const& _other) const { return it != _other.it; }
 		AssemblyItem const& operator*() const;
 		AssemblyItems::const_iterator it;
 		AssemblyItems::const_iterator end;
-		AssemblyItem const* replaceItem;
-		AssemblyItem const* replaceWith;
+		AssemblyItem const* replaceItem = nullptr;
+		AssemblyItem const* replaceWith = nullptr;
 	};
 
 	std::map<u256, u256> m_replacedTags;

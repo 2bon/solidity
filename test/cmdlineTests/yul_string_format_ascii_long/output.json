@@ -1,11 +1,8 @@
-{"contracts":{"A":{"C":{"ir":"/*=====================================================*
- *                       WARNING                       *
- *  Solidity to Yul compilation is still EXPERIMENTAL  *
- *       It can result in LOSS OF FUNDS or worse       *
- *                !USE AT YOUR OWN RISK!               *
- *=====================================================*/
-
-
+{
+    "contracts": {
+        "A": {
+            "C": {
+                "ir": "
 /// @use-src 0:\"A\"
 object \"C_11\" {
     code {
@@ -43,7 +40,7 @@ object \"C_11\" {
             /// @src 0:78:243  \"contract C { function f() external pure returns (string memory) { return \\\"abcdabcdcafecafeabcdabcdcafecafeffffzzzzoooo0123456789,.<,>.?:;'[{]}|`~!@#$%^&*()-_=+\\\"; } }\"
             mstore(64, memoryguard(128))
 
-            if iszero(lt(calldatasize(), 4))
+            if gt(calldatasize(), 3)
             {
                 let selector := shift_right_224_unsigned(calldataload(0))
                 switch selector
@@ -95,17 +92,11 @@ object \"C_11\" {
                 updated_pos := add(pos, 0x20)
             }
 
-            function copy_memory_to_memory(src, dst, length) {
-                let i := 0
-                for { } lt(i, length) { i := add(i, 32) }
-                {
-                    mstore(add(dst, i), mload(add(src, i)))
-                }
-                if gt(i, length)
-                {
-                    // clear end
-                    mstore(add(dst, length), 0)
-                }
+            function copy_memory_to_memory_with_cleanup(src, dst, length) {
+
+                mcopy(dst, src, length)
+                mstore(add(dst, length), 0)
+
             }
 
             function round_up_to_mul_of_32(value) -> result {
@@ -115,7 +106,7 @@ object \"C_11\" {
             function abi_encode_t_string_memory_ptr_to_t_string_memory_ptr_fromStack(value, pos) -> end {
                 let length := array_length_t_string_memory_ptr(value)
                 pos := array_storeLengthForEncoding_t_string_memory_ptr_fromStack(pos, length)
-                copy_memory_to_memory(add(value, 0x20), pos, length)
+                copy_memory_to_memory_with_cleanup(add(value, 0x20), pos, length)
                 end := add(pos, round_up_to_mul_of_32(length))
             }
 
@@ -223,4 +214,13 @@ object \"C_11\" {
 
 }
 
-"}}},"sources":{"A":{"id":0}}}
+"
+            }
+        }
+    },
+    "sources": {
+        "A": {
+            "id": 0
+        }
+    }
+}

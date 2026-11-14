@@ -17,10 +17,6 @@ contract C {
         return 2;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f(uint256): 0 -> FAILURE, hex"4e487b71", 0x12
 // g(uint256): 0 -> FAILURE, hex"4e487b71", 0x12

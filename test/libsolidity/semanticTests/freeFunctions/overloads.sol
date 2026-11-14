@@ -10,8 +10,5 @@ contract C {
       return (f(2), f("abc"));
   }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // g() -> 2, 3

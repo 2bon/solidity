@@ -21,10 +21,6 @@ contract Derived is Base {
         derived = dataDerived;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // setData(uint256,uint256): 1, 2 -> true
 // getViaBase() -> 1

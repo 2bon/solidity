@@ -38,9 +38,6 @@ contract Store is BinarySearch {
         return find(data, v);
     }
 }
-
-// ====
-// compileViaYul: also
 // ----
 // find(uint256): 7 -> -1
 // add(uint256): 7 ->

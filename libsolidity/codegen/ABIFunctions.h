@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <map>
+#include <source_location>
 #include <vector>
 
 namespace solidity::frontend
@@ -243,7 +244,7 @@ private:
 	std::string abiDecodingFunctionArray(ArrayType const& _type, bool _fromMemory);
 	/// Part of @a abiDecodingFunction for calldata array types.
 	std::string abiDecodingFunctionCalldataArray(ArrayType const& _type);
-	/// Part of @a abiDecodingFunctionArrayWithAvailableLength
+	/// Part of @a abiDecodingFunctionArrayAvailableLength
 	std::string abiDecodingFunctionByteArrayAvailableLength(ArrayType const& _type, bool _fromMemory);
 	/// Part of @a abiDecodingFunction for calldata struct types.
 	std::string abiDecodingFunctionCalldataStruct(StructType const& _type);
@@ -262,7 +263,11 @@ private:
 	/// Helper function that uses @a _creator to create a function and add it to
 	/// @a m_requestedFunctions if it has not been created yet and returns @a _name in both
 	/// cases.
-	std::string createFunction(std::string const& _name, std::function<std::string()> const& _creator);
+	std::string createFunction(
+		std::string const& _name,
+		std::function<std::string()> const& _creator,
+		std::source_location _site = std::source_location::current()
+	);
 
 	/// @returns the size of the static part of the encoding of the given types.
 	static size_t headSize(TypePointers const& _targetTypes);

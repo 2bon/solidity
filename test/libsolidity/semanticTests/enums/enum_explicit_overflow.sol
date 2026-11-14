@@ -20,10 +20,7 @@ contract test {
 
     ActionChoices choice;
 }
-
 // ====
-// compileViaYul: also
-// compileToEwasm: also
 // EVMVersion: >=byzantium
 // ----
 // getChoiceExp(uint256): 2 -> 2

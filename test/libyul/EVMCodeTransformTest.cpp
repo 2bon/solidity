@@ -19,64 +19,76 @@
 #include <test/libyul/EVMCodeTransformTest.h>
 #include <test/libyul/Common.h>
 
-#include <libyul/AssemblyStack.h>
+#include <test/Common.h>
+
+#include <libyul/Exceptions.h>
+#include <libyul/YulStack.h>
 #include <libyul/backends/evm/EthAssemblyAdapter.h>
 #include <libyul/backends/evm/EVMObjectCompiler.h>
 
 #include <libevmasm/Assembly.h>
 
-#include <liblangutil/SourceReferenceFormatter.h>
+#include <libsolutil/CommonIO.h>
 
-#include <libsolutil/AnsiColorized.h>
+#include <fmt/format.h>
 
 using namespace solidity;
+using namespace solidity::test;
 using namespace solidity::util;
 using namespace solidity::langutil;
 using namespace solidity::yul;
 using namespace solidity::yul::test;
 using namespace solidity::frontend;
 using namespace solidity::frontend::test;
-using namespace std;
 
-EVMCodeTransformTest::EVMCodeTransformTest(string const& _filename):
-	TestCase(_filename)
+EVMCodeTransformTest::EVMCodeTransformTest(std::string const& _filename):
+	EVMVersionRestrictedTestCase(_filename)
 {
 	m_source = m_reader.source();
 	m_stackOpt = m_reader.boolSetting("stackOptimization", false);
+	m_viaSSACFG = m_reader.boolSetting("viaSSACFG", false);
+	if (m_viaSSACFG && !m_stackOpt)
+		BOOST_THROW_EXCEPTION(std::runtime_error("viaSSACFG requires stackOptimization."));
 	m_expectation = m_reader.simpleExpectations();
 }
 
-TestCase::TestResult EVMCodeTransformTest::run(ostream& _stream, string const& _linePrefix, bool const _formatted)
+TestCase::TestResult EVMCodeTransformTest::run(std::ostream& _stream, std::string const& _linePrefix, bool const _formatted)
 {
 	solidity::frontend::OptimiserSettings settings = solidity::frontend::OptimiserSettings::none();
 	settings.runYulOptimiser = false;
 	settings.optimizeStackAllocation = m_stackOpt;
-	AssemblyStack stack(
-		EVMVersion{},
-		AssemblyStack::Language::StrictAssembly,
+	// Restrict to a single EVM version (the default one) as code generation
+	// can be different from version to version.
+	YulStack yulStack(
+		CommonOptions::get().evmVersion(),
 		settings,
-		DebugInfoSelection::All()
+		DebugInfoSelection::AllExceptExperimental()
 	);
-	if (!stack.parseAndAnalyze("", m_source))
+	yulStack.parseAndAnalyze("", m_source);
+	if (yulStack.hasErrors())
 	{
-		AnsiColorized(_stream, _formatted, {formatting::BOLD, formatting::RED}) << _linePrefix << "Error parsing source." << endl;
-		SourceReferenceFormatter{_stream, stack, true, false}
-			.printErrorInformation(stack.errors());
+		printYulErrors(yulStack, _stream, _linePrefix, _formatted);
 		return TestResult::FatalError;
 	}
 
-	evmasm::Assembly assembly;
+	evmasm::Assembly assembly{CommonOptions::get().evmVersion(), false, {}};
 	EthAssemblyAdapter adapter(assembly);
-	EVMObjectCompiler::compile(
-		*stack.parserResult(),
-		adapter,
-		EVMDialect::strictAssemblyForEVMObjects(EVMVersion{}),
-		m_stackOpt
-	);
+	try
+	{
+		EVMObjectCompiler::compile(
+			*yulStack.parserResult(),
+			adapter,
+			m_stackOpt,
+			m_viaSSACFG
+		);
+	}
+	catch (StackTooDeepError const& _error)
+	{
+		m_obtainedResult = fmt::format("StackTooDeepError: {}\n", _error.comment() ? *_error.comment() : "");
+		return checkResult(_stream, _linePrefix, _formatted);
+	}
 
-	std::ostringstream output;
-	output << assembly;
-	m_obtainedResult = output.str();
+	m_obtainedResult = toString(assembly);
 
 	return checkResult(_stream, _linePrefix, _formatted);
 }

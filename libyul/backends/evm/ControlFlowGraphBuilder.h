@@ -21,6 +21,9 @@
 #pragma once
 
 #include <libyul/backends/evm/ControlFlowGraph.h>
+#include <libyul/ControlFlowSideEffects.h>
+
+#include <libsolutil/UnorderedContainers.h>
 
 namespace solidity::yul
 {
@@ -32,7 +35,7 @@ public:
 	ControlFlowGraphBuilder& operator=(ControlFlowGraphBuilder const&) = delete;
 	static std::unique_ptr<CFG> build(AsmAnalysisInfo const& _analysisInfo, Dialect const& _dialect, Block const& _block);
 
-	StackSlot operator()(Expression const& _literal);
+	StackSlot operator()(Expression const& _expression);
 	StackSlot operator()(Literal const& _literal);
 	StackSlot operator()(Identifier const& _identifier);
 	StackSlot operator()(FunctionCall const&);
@@ -55,28 +58,30 @@ private:
 	ControlFlowGraphBuilder(
 		CFG& _graph,
 		AsmAnalysisInfo const& _analysisInfo,
+		util::unordered_flat_map<FunctionDefinition const*, ControlFlowSideEffects> const& _functionSideEffects,
 		Dialect const& _dialect
 	);
 	void registerFunction(FunctionDefinition const& _function);
 	Stack const& visitFunctionCall(FunctionCall const&);
 	Stack visitAssignmentRightHandSide(Expression const& _expression, size_t _expectedSlotCount);
 
-	Scope::Function const& lookupFunction(YulString _name) const;
-	Scope::Variable const& lookupVariable(YulString _name) const;
+	Scope::Function const& lookupFunction(YulName _name) const;
+	Scope::Variable const& lookupVariable(YulName _name) const;
 	/// Resets m_currentBlock to enforce a subsequent explicit reassignment.
 	void makeConditionalJump(
-		std::shared_ptr<DebugData const> _debugData,
+		langutil::DebugData::ConstPtr _debugData,
 		StackSlot _condition,
 		CFG::BasicBlock& _nonZero,
 		CFG::BasicBlock& _zero
 	);
 	void jump(
-		std::shared_ptr<DebugData const> _debugData,
+		langutil::DebugData::ConstPtr _debugData,
 		CFG::BasicBlock& _target,
 		bool _backwards = false
 	);
 	CFG& m_graph;
 	AsmAnalysisInfo const& m_info;
+	util::unordered_flat_map<FunctionDefinition const*, ControlFlowSideEffects> const& m_functionSideEffects;
 	Dialect const& m_dialect;
 	CFG::BasicBlock* m_currentBlock = nullptr;
 	Scope* m_scope = nullptr;

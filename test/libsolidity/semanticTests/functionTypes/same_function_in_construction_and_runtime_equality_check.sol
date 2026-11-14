@@ -13,9 +13,5 @@ contract C {
         _ret = _arg * 2;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // test() -> true

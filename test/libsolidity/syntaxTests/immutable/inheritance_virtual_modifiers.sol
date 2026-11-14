@@ -18,4 +18,4 @@ contract C is B {
     }
 }
 // ----
-// TypeError 7733: (245-246): Immutable variables cannot be read before they are initialized.
+// Warning 8429: (88-137): Virtual modifiers are deprecated and scheduled for removal.

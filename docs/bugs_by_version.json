@@ -1,6 +1,9 @@
 {
     "0.1.0": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -22,6 +25,9 @@
     },
     "0.1.1": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -43,6 +49,9 @@
     },
     "0.1.2": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -64,6 +73,9 @@
     },
     "0.1.3": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -85,6 +97,9 @@
     },
     "0.1.4": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -107,6 +122,9 @@
     },
     "0.1.5": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -129,6 +147,9 @@
     },
     "0.1.6": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -153,6 +174,9 @@
     },
     "0.1.7": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -177,6 +201,9 @@
     },
     "0.2.0": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -202,6 +229,9 @@
     },
     "0.2.1": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -227,6 +257,9 @@
     },
     "0.2.2": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -252,6 +285,9 @@
     },
     "0.3.0": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -279,6 +315,9 @@
     },
     "0.3.1": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -305,6 +344,9 @@
     },
     "0.3.2": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -331,6 +373,9 @@
     },
     "0.3.3": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -356,6 +401,9 @@
     },
     "0.3.4": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -381,6 +429,9 @@
     },
     "0.3.5": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -406,6 +457,9 @@
     },
     "0.3.6": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -429,6 +483,9 @@
     },
     "0.4.0": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -452,6 +509,9 @@
     },
     "0.4.1": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -475,6 +535,9 @@
     },
     "0.4.10": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -497,6 +560,9 @@
     },
     "0.4.11": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -518,6 +584,9 @@
     },
     "0.4.12": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -538,6 +607,9 @@
     },
     "0.4.13": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -558,6 +630,9 @@
     },
     "0.4.14": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -577,6 +652,9 @@
     },
     "0.4.15": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -595,6 +673,9 @@
     },
     "0.4.16": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -616,6 +697,9 @@
     },
     "0.4.17": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -638,6 +722,9 @@
     },
     "0.4.18": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -659,6 +746,9 @@
     },
     "0.4.19": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -681,6 +771,9 @@
     },
     "0.4.2": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -703,6 +796,9 @@
     },
     "0.4.20": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -725,6 +821,9 @@
     },
     "0.4.21": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -747,6 +846,9 @@
     },
     "0.4.22": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -769,6 +871,9 @@
     },
     "0.4.23": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -790,6 +895,9 @@
     },
     "0.4.24": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -811,6 +919,9 @@
     },
     "0.4.25": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -830,6 +941,9 @@
     },
     "0.4.26": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -846,6 +960,9 @@
     },
     "0.4.3": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -867,6 +984,9 @@
     },
     "0.4.4": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -887,6 +1007,9 @@
     },
     "0.4.5": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -910,6 +1033,9 @@
     },
     "0.4.6": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -932,6 +1058,9 @@
     },
     "0.4.7": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -954,6 +1083,9 @@
     },
     "0.4.8": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -976,6 +1108,9 @@
     },
     "0.4.9": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "KeccakCaching",
             "EmptyByteArrayCopy",
             "DynamicArrayCleanup",
@@ -998,6 +1133,9 @@
     },
     "0.5.0": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1017,6 +1155,9 @@
     },
     "0.5.1": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1036,6 +1177,11 @@
     },
     "0.5.10": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1051,6 +1197,11 @@
     },
     "0.5.11": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1065,6 +1216,11 @@
     },
     "0.5.12": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1079,6 +1235,11 @@
     },
     "0.5.13": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1093,6 +1254,11 @@
     },
     "0.5.14": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1109,6 +1275,11 @@
     },
     "0.5.15": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1124,6 +1295,11 @@
     },
     "0.5.16": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1138,6 +1314,11 @@
     },
     "0.5.17": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1151,6 +1332,9 @@
     },
     "0.5.2": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1170,6 +1354,9 @@
     },
     "0.5.3": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1189,6 +1376,9 @@
     },
     "0.5.4": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1208,6 +1398,9 @@
     },
     "0.5.5": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1229,6 +1422,9 @@
     },
     "0.5.6": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1250,6 +1446,9 @@
     },
     "0.5.7": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "DirtyBytesArrayToStorage",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1269,6 +1468,11 @@
     },
     "0.5.8": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1287,6 +1491,11 @@
     },
     "0.5.9": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1304,6 +1513,11 @@
     },
     "0.6.0": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1319,6 +1533,11 @@
     },
     "0.6.1": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1333,6 +1552,14 @@
     },
     "0.6.10": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1343,6 +1570,14 @@
     },
     "0.6.11": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1353,6 +1588,14 @@
     },
     "0.6.12": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1363,6 +1606,12 @@
     },
     "0.6.2": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1377,6 +1626,12 @@
     },
     "0.6.3": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1391,6 +1646,12 @@
     },
     "0.6.4": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
             "EmptyByteArrayCopy",
@@ -1405,6 +1666,12 @@
     },
     "0.6.5": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1419,6 +1686,12 @@
     },
     "0.6.6": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1432,6 +1705,13 @@
     },
     "0.6.7": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1445,6 +1725,13 @@
     },
     "0.6.8": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1455,6 +1742,14 @@
     },
     "0.6.9": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1466,6 +1761,14 @@
     },
     "0.7.0": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1476,6 +1779,14 @@
     },
     "0.7.1": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1487,6 +1798,16 @@
     },
     "0.7.2": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1497,6 +1818,16 @@
     },
     "0.7.3": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching",
@@ -1506,6 +1837,16 @@
     },
     "0.7.4": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching"
@@ -1514,6 +1855,16 @@
     },
     "0.7.5": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching"
@@ -1522,6 +1873,16 @@
     },
     "0.7.6": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching"
@@ -1530,6 +1891,16 @@
     },
     "0.8.0": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching"
@@ -1538,6 +1909,16 @@
     },
     "0.8.1": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching"
@@ -1545,65 +1926,490 @@
         "released": "2021-01-27"
     },
     "0.8.10": {
-        "bugs": [],
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation"
+        ],
         "released": "2021-11-09"
     },
     "0.8.11": {
-        "bugs": [],
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
+            "AbiEncodeCallLiteralAsFixedBytesBug"
+        ],
         "released": "2021-12-20"
     },
     "0.8.12": {
-        "bugs": [],
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
+            "AbiEncodeCallLiteralAsFixedBytesBug"
+        ],
         "released": "2022-02-16"
+    },
+    "0.8.13": {
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "StorageWriteRemovalBeforeConditionalTermination",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "InlineAssemblyMemorySideEffects",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation"
+        ],
+        "released": "2022-03-16"
+    },
+    "0.8.14": {
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "StorageWriteRemovalBeforeConditionalTermination",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "InlineAssemblyMemorySideEffects"
+        ],
+        "released": "2022-05-17"
+    },
+    "0.8.15": {
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "StorageWriteRemovalBeforeConditionalTermination",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup"
+        ],
+        "released": "2022-06-15"
+    },
+    "0.8.16": {
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "StorageWriteRemovalBeforeConditionalTermination"
+        ],
+        "released": "2022-08-08"
+    },
+    "0.8.17": {
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess"
+        ],
+        "released": "2022-09-08"
+    },
+    "0.8.18": {
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess"
+        ],
+        "released": "2023-02-01"
+    },
+    "0.8.19": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess"
+        ],
+        "released": "2023-02-22"
     },
     "0.8.2": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory",
             "KeccakCaching"
         ],
         "released": "2021-03-02"
     },
+    "0.8.20": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess"
+        ],
+        "released": "2023-05-10"
+    },
+    "0.8.21": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication"
+        ],
+        "released": "2023-07-19"
+    },
+    "0.8.22": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication"
+        ],
+        "released": "2023-10-25"
+    },
+    "0.8.23": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2023-11-08"
+    },
+    "0.8.24": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2024-01-25"
+    },
+    "0.8.25": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2024-03-14"
+    },
+    "0.8.26": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2024-05-21"
+    },
+    "0.8.27": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2024-09-04"
+    },
+    "0.8.28": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "TransientStorageClearingHelperCollision",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2024-10-09"
+    },
+    "0.8.29": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "InheritanceOrderReversalOnStorageEndWarning",
+            "UnsoundSpillInMutualRecursion",
+            "TransientStorageClearingHelperCollision",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2025-03-12"
+    },
     "0.8.3": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables",
             "ABIDecodeTwoDimensionalArrayMemory"
         ],
         "released": "2021-03-23"
     },
+    "0.8.30": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "InheritanceOrderReversalOnStorageEndWarning",
+            "UnsoundSpillInMutualRecursion",
+            "TransientStorageClearingHelperCollision",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2025-05-07"
+    },
+    "0.8.31": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "InheritanceOrderReversalOnStorageEndWarning",
+            "UnsoundSpillInMutualRecursion",
+            "TransientStorageClearingHelperCollision",
+            "LostStorageArrayWriteOnSlotOverflow"
+        ],
+        "released": "2025-12-03"
+    },
+    "0.8.32": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "InheritanceOrderReversalOnStorageEndWarning",
+            "UnsoundSpillInMutualRecursion",
+            "TransientStorageClearingHelperCollision"
+        ],
+        "released": "2025-12-18"
+    },
+    "0.8.33": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "InheritanceOrderReversalOnStorageEndWarning",
+            "UnsoundSpillInMutualRecursion",
+            "TransientStorageClearingHelperCollision"
+        ],
+        "released": "2025-12-18"
+    },
+    "0.8.34": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "InheritanceOrderReversalOnStorageEndWarning",
+            "UnsoundSpillInMutualRecursion"
+        ],
+        "released": "2026-02-18"
+    },
+    "0.8.35": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "InheritanceOrderReversalOnStorageEndWarning",
+            "UnsoundSpillInMutualRecursion"
+        ],
+        "released": "2026-04-29"
+    },
+    "0.8.36": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping",
+            "MisorderedNamedParametersInRequireWithCustomErrors",
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion"
+        ],
+        "released": "2026-07-09"
+    },
+    "0.8.37": {
+        "bugs": [
+            "YulOptimizerKnowledgeBaseStaleBookkeeping"
+        ],
+        "released": "2026-09-10"
+    },
+    "0.8.38": {
+        "bugs": [],
+        "released": "2026-10-22"
+    },
     "0.8.4": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables"
         ],
         "released": "2021-04-21"
     },
     "0.8.5": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables"
         ],
         "released": "2021-06-10"
     },
     "0.8.6": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables"
         ],
         "released": "2021-06-22"
     },
     "0.8.7": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "SignedImmutables"
         ],
         "released": "2021-08-11"
     },
     "0.8.8": {
         "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation",
             "UserDefinedValueTypesBug",
             "SignedImmutables"
         ],
         "released": "2021-09-27"
     },
     "0.8.9": {
-        "bugs": [],
+        "bugs": [
+            "MemoryByteArrayElementDeleteClearsWholeWord",
+            "SpillSlotCollisionAcrossMutualRecursion",
+            "UnsoundSpillInMutualRecursion",
+            "LostStorageArrayWriteOnSlotOverflow",
+            "VerbatimInvalidDeduplication",
+            "FullInlinerNonExpressionSplitArgumentEvaluationOrder",
+            "MissingSideEffectsOnSelectorAccess",
+            "AbiReencodingHeadOverflowWithStaticArrayCleanup",
+            "DirtyBytesArrayToStorage",
+            "DataLocationChangeInInternalOverride",
+            "NestedCalldataArrayAbiReencodingSizeValidation"
+        ],
         "released": "2021-09-29"
     }
 }

@@ -43,7 +43,7 @@ contract C {
 	}
 }
 // ====
-// SMTEngine: all
+// SMTEngine: chc
+// SMTSolvers: eld
 // ----
-// Warning 6328: (657-667): CHC: Assertion violation might happen here.
-// Warning 4661: (657-667): BMC: Assertion violation happens here.
+// Warning 6328: (657-667): CHC: Assertion violation happens here.

@@ -15,9 +15,5 @@ contract test {
         ret_value = data1.m_value;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // deleteMember() -> 0

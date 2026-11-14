@@ -13,10 +13,9 @@ contract C {
         return m;
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // f() -> 0x20, 2, 0x40, 0xa0, 2, 0, 1, 2, 2, 3
-// gas irOptimized: 161780
-// gas legacy: 162278
-// gas legacyOptimized: 159955
+// gas irOptimized: 161790
+// gas legacy: 162200
+// gas legacyOptimized: 159953
+// gas ssaCFGOptimized: 161649

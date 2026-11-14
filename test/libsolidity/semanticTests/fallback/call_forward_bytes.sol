@@ -14,14 +14,13 @@ contract sender {
 }
 // ====
 // allowNonExistingFunctions: true
-// compileToEwasm: false
-// compileViaYul: also
 // ----
 // recv(uint256): 7 ->
 // val() -> 0
 // forward() -> true
 // val() -> 8
 // clear() -> true
+// gas irOptimized: 29240
 // val() -> 8
 // forward() -> true
 // val() -> 0x80

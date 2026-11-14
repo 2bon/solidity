@@ -38,14 +38,26 @@ struct SMTLogicError: virtual util::Exception {};
 #endif
 
 #define smtAssert_1(CONDITION) \
-	smtAssert_2(CONDITION, "")
+	smtAssert_2((CONDITION), "")
 
 #define smtAssert_2(CONDITION, DESCRIPTION) \
 	assertThrowWithDefaultDescription( \
-		CONDITION, \
+		(CONDITION), \
 		::solidity::smtutil::SMTLogicError, \
-		DESCRIPTION, \
+		(DESCRIPTION), \
 		"SMT assertion failed" \
 	)
 
+
+// Error to indicate that some problem occurred during an interaction with external solver.
+// This could be a problem with calling the solver or unexpected situation during the processing of solver's response.
+struct SMTSolverInteractionError: virtual util::Exception {};
+
+#define smtSolverInteractionRequire(CONDITION, DESCRIPTION) \
+	assertThrowWithDefaultDescription( \
+		(CONDITION), \
+		::solidity::smtutil::SMTSolverInteractionError, \
+		(DESCRIPTION), \
+		"Encountered problem during interaction with a solver" \
+	)
 }

@@ -39,7 +39,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-using namespace std;
 using namespace solidity;
 using namespace solidity::langutil;
 using namespace solidity::frontend;
@@ -121,8 +120,8 @@ bool ReferencesResolver::visit(Identifier const& _identifier)
 	auto declarations = m_resolver.nameFromCurrentScope(_identifier.name());
 	if (declarations.empty())
 	{
-		string suggestions = m_resolver.similarNameSuggestions(_identifier.name());
-		string errorMessage = "Undeclared identifier.";
+		std::string suggestions = m_resolver.similarNameSuggestions(_identifier.name());
+		std::string errorMessage = "Undeclared identifier.";
 		if (!suggestions.empty())
 		{
 			if ("\"" + _identifier.name() + "\"" == suggestions)
@@ -141,7 +140,7 @@ bool ReferencesResolver::visit(Identifier const& _identifier)
 
 bool ReferencesResolver::visit(FunctionDefinition const& _functionDefinition)
 {
-	m_returnParameters.push_back(_functionDefinition.returnParameterList().get());
+	m_functionDefinitions.push_back(&_functionDefinition);
 
 	if (_functionDefinition.documentation())
 		resolveInheritDoc(*_functionDefinition.documentation(), _functionDefinition.annotation());
@@ -151,13 +150,13 @@ bool ReferencesResolver::visit(FunctionDefinition const& _functionDefinition)
 
 void ReferencesResolver::endVisit(FunctionDefinition const&)
 {
-	solAssert(!m_returnParameters.empty(), "");
-	m_returnParameters.pop_back();
+	solAssert(!m_functionDefinitions.empty(), "");
+	m_functionDefinitions.pop_back();
 }
 
 bool ReferencesResolver::visit(ModifierDefinition const& _modifierDefinition)
 {
-	m_returnParameters.push_back(nullptr);
+	m_functionDefinitions.push_back(nullptr);
 
 	if (_modifierDefinition.documentation())
 		resolveInheritDoc(*_modifierDefinition.documentation(), _modifierDefinition.annotation());
@@ -167,26 +166,60 @@ bool ReferencesResolver::visit(ModifierDefinition const& _modifierDefinition)
 
 void ReferencesResolver::endVisit(ModifierDefinition const&)
 {
-	solAssert(!m_returnParameters.empty(), "");
-	m_returnParameters.pop_back();
+	solAssert(!m_functionDefinitions.empty(), "");
+	m_functionDefinitions.pop_back();
 }
 
 void ReferencesResolver::endVisit(IdentifierPath const& _path)
 {
-	Declaration const* declaration = m_resolver.pathFromCurrentScope(_path.path());
-	if (!declaration)
+	// Note that library/functions names in "using {} for" directive are resolved separately in visit(UsingForDirective)
+	std::vector<Declaration const*> declarations = m_resolver.pathFromCurrentScopeWithAllDeclarations(_path.path());
+	if (declarations.empty())
 	{
 		m_errorReporter.fatalDeclarationError(7920_error, _path.location(), "Identifier not found or not unique.");
 		return;
 	}
 
-	_path.annotation().referencedDeclaration = declaration;
+	_path.annotation().referencedDeclaration = declarations.back();
+	_path.annotation().pathDeclarations = std::move(declarations);
+}
+
+bool ReferencesResolver::visit(UsingForDirective const& _usingFor)
+{
+	for (ASTPointer<IdentifierPath> const& path: _usingFor.functionsOrLibrary())
+	{
+		// _includeInvisibles is enabled here because external library functions are marked invisible.
+		// As unintended side-effects other invisible names (eg.: super, this) may be returned as well.
+		// DeclarationTypeChecker should detect and report such situations.
+		std::vector<Declaration const*> declarations = m_resolver.pathFromCurrentScopeWithAllDeclarations(path->path(), true /* _includeInvisibles */);
+		if (declarations.empty())
+		{
+			std::string libraryOrFunctionNameErrorMessage =
+				_usingFor.usesBraces() ?
+				"Identifier is not a function name or not unique." :
+				"Identifier is not a library name.";
+			m_errorReporter.fatalDeclarationError(
+				9589_error,
+				path->location(),
+				libraryOrFunctionNameErrorMessage
+			);
+			break;
+		}
+
+		path->annotation().referencedDeclaration = declarations.back();
+		path->annotation().pathDeclarations = std::move(declarations);
+	}
+
+	if (_usingFor.typeName())
+		_usingFor.typeName()->accept(*this);
+
+	return false;
 }
 
 bool ReferencesResolver::visit(InlineAssembly const& _inlineAssembly)
 {
 	m_yulAnnotation = &_inlineAssembly.annotation();
-	(*this)(_inlineAssembly.operations());
+	(*this)(_inlineAssembly.operations().root());
 	m_yulAnnotation = nullptr;
 
 	return false;
@@ -194,8 +227,9 @@ bool ReferencesResolver::visit(InlineAssembly const& _inlineAssembly)
 
 bool ReferencesResolver::visit(Return const& _return)
 {
-	solAssert(!m_returnParameters.empty(), "");
-	_return.annotation().functionReturnParameters = m_returnParameters.back();
+	solAssert(!m_functionDefinitions.empty(), "");
+	_return.annotation().function = m_functionDefinitions.back();
+	_return.annotation().functionReturnParameters = m_functionDefinitions.back() ? m_functionDefinitions.back()->returnParameterList().get() : nullptr;
 	return true;
 }
 
@@ -203,7 +237,7 @@ void ReferencesResolver::operator()(yul::FunctionDefinition const& _function)
 {
 	solAssert(nativeLocationOf(_function) == originLocationOf(_function), "");
 	validateYulIdentifierName(_function.name, nativeLocationOf(_function));
-	for (yul::TypedName const& varName: _function.parameters + _function.returnVariables)
+	for (yul::NameWithDebugData const& varName: _function.parameters + _function.returnVariables)
 	{
 		solAssert(nativeLocationOf(varName) == originLocationOf(varName), "");
 		validateYulIdentifierName(varName.name, nativeLocationOf(varName));
@@ -219,9 +253,9 @@ void ReferencesResolver::operator()(yul::Identifier const& _identifier)
 {
 	solAssert(nativeLocationOf(_identifier) == originLocationOf(_identifier), "");
 
-	static set<string> suffixes{"slot", "offset", "length", "address", "selector"};
-	string suffix;
-	for (string const& s: suffixes)
+	static std::set<std::string> suffixes{"slot", "offset", "length", "address", "selector"};
+	std::string suffix;
+	for (std::string const& s: suffixes)
 		if (boost::algorithm::ends_with(_identifier.name.str(), "." + s))
 			suffix = s;
 
@@ -235,7 +269,7 @@ void ReferencesResolver::operator()(yul::Identifier const& _identifier)
 		if (!declarations.empty())
 			// the special identifier exists itself, we should not allow that.
 			return;
-		string realName = _identifier.name.str().substr(0, _identifier.name.str().size() - suffix.size() - 1);
+		std::string realName = _identifier.name.str().substr(0, _identifier.name.str().size() - suffix.size() - 1);
 		solAssert(!realName.empty(), "Empty name.");
 		declarations = m_resolver.nameFromCurrentScope(realName);
 		if (!declarations.empty())
@@ -260,7 +294,7 @@ void ReferencesResolver::operator()(yul::Identifier const& _identifier)
 			m_errorReporter.declarationError(
 				9467_error,
 				nativeLocationOf(_identifier),
-				"Identifier not found. Use \".slot\" and \".offset\" to access storage variables."
+				"Identifier not found. Use \".slot\" and \".offset\" to access storage or transient storage variables."
 			);
 		return;
 	}
@@ -275,7 +309,7 @@ void ReferencesResolver::operator()(yul::Identifier const& _identifier)
 			return;
 		}
 
-	m_yulAnnotation->externalReferences[&_identifier].suffix = move(suffix);
+	m_yulAnnotation->externalReferences[&_identifier].suffix = std::move(suffix);
 	m_yulAnnotation->externalReferences[&_identifier].declaration = declarations.front();
 }
 
@@ -316,7 +350,7 @@ void ReferencesResolver::resolveInheritDoc(StructuredDocumentation const& _docum
 		break;
 	case 1:
 	{
-		string const& name = _annotation.docTags.find("inheritdoc")->second.content;
+		std::string const& name = _annotation.docTags.find("inheritdoc")->second.content;
 		if (name.empty())
 		{
 			m_errorReporter.docstringParsingError(
@@ -327,7 +361,7 @@ void ReferencesResolver::resolveInheritDoc(StructuredDocumentation const& _docum
 			return;
 		}
 
-		vector<string> path;
+		std::vector<std::string> path;
 		boost::split(path, name, boost::is_any_of("."));
 		if (any_of(path.begin(), path.end(), [](auto& _str) { return _str.empty(); }))
 		{
@@ -378,7 +412,7 @@ void ReferencesResolver::resolveInheritDoc(StructuredDocumentation const& _docum
 	}
 }
 
-void ReferencesResolver::validateYulIdentifierName(yul::YulString _name, SourceLocation const& _location)
+void ReferencesResolver::validateYulIdentifierName(yul::YulName _name, SourceLocation const& _location)
 {
 	if (util::contains(_name.str(), '.'))
 		m_errorReporter.declarationError(
@@ -387,7 +421,7 @@ void ReferencesResolver::validateYulIdentifierName(yul::YulString _name, SourceL
 			"User-defined identifiers in inline assembly cannot contain '.'."
 		);
 
-	if (set<string>{"this", "super", "_"}.count(_name.str()))
+	if (std::set<std::string>{"this", "super", "_"}.count(_name.str()))
 		m_errorReporter.declarationError(
 			4113_error,
 			_location,

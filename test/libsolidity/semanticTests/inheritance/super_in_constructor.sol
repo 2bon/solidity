@@ -30,8 +30,5 @@ contract D is B, C {
         return data;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 15

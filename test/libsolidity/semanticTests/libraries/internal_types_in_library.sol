@@ -19,12 +19,10 @@ contract Test {
         b = Lib.find(data["abc"], 3);
     }
 }
-// ====
-// compileToEwasm: false
-// compileViaYul: also
 // ----
 // library: Lib
 // f() -> 4, 0x11
-// gas irOptimized: 115822
-// gas legacy: 135952
-// gas legacyOptimized: 119643
+// gas irOptimized: 109131
+// gas legacy: 132930
+// gas legacyOptimized: 118020
+// gas ssaCFGOptimized: 109282

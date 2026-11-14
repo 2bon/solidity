@@ -16,12 +16,8 @@ contract C {
         return 2;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // one() -> 3
-// gas legacy: 140260
-// gas legacyOptimized: 140097
+// gas legacy: 142687
+// gas legacyOptimized: 135991
 // two() -> FAILURE, hex"4e487b71", 0x51

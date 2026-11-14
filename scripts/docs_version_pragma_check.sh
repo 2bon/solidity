@@ -154,7 +154,8 @@ SOLTMPDIR=$(mktemp -d)
         # We expect errors if explicitly stated, or if imports
         # are used (in the style guide)
         if ( ! grep -E "This will not compile after" "$f" >/dev/null && \
-            grep -E "This will not compile|import \"" "$f" >/dev/null )
+            grep -E "This will not compile|import \"" "$f" >/dev/null || \
+            grep -R "This will only compile via IR" "$f" >/dev/null )
         then
             opts=(--expect-errors)
         fi
@@ -180,7 +181,7 @@ SOLTMPDIR=$(mktemp -d)
         if [[ ! -f "$solc_bin" ]]
         then
             echo "Downloading release from github..."
-            if wget -q "https://github.com/ethereum/solidity/releases/download/v$version/solc-static-linux" >/dev/null
+            if wget -q "https://github.com/argotorg/solidity/releases/download/v$version/solc-static-linux" >/dev/null
             then
                 mv solc-static-linux "$solc_bin"
             else

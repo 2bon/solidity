@@ -7,9 +7,6 @@ contract C {
         return x.mul(a);
     }
 }
-// ====
-// compileToEwasm: false
-// compileViaYul: also
 // ----
 // library: D
 // f(uint256): 7 -> 0x15

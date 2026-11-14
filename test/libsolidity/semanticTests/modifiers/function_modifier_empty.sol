@@ -12,9 +12,5 @@ contract C is A {
         if (false) _;
     }
 }
-
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // f() -> false

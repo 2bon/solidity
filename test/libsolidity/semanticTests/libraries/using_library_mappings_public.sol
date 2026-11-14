@@ -16,12 +16,10 @@ contract Test {
         return (m1[0], m1[1], m1[2], m2[0], m2[1], m2[2]);
     }
 }
-// ====
-// compileToEwasm: false
-// compileViaYul: also
 // ----
 // library: Lib
 // f() -> 1, 0, 0x2a, 0x17, 0, 0x63
-// gas irOptimized: 119757
-// gas legacy: 124793
-// gas legacyOptimized: 119694
+// gas irOptimized: 119822
+// gas legacy: 124661
+// gas legacyOptimized: 119665
+// gas ssaCFGOptimized: 119418

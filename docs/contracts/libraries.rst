@@ -146,16 +146,16 @@ custom types without the overhead of external function calls:
             r.limbs[0] = x;
         }
 
-        function add(bigint memory _a, bigint memory _b) internal pure returns (bigint memory r) {
-            r.limbs = new uint[](max(_a.limbs.length, _b.limbs.length));
+        function add(bigint memory a, bigint memory b) internal pure returns (bigint memory r) {
+            r.limbs = new uint[](max(a.limbs.length, b.limbs.length));
             uint carry = 0;
             for (uint i = 0; i < r.limbs.length; ++i) {
-                uint a = limb(_a, i);
-                uint b = limb(_b, i);
+                uint limbA = limb(a, i);
+                uint limbB = limb(b, i);
                 unchecked {
-                    r.limbs[i] = a + b + carry;
+                    r.limbs[i] = limbA + limbB + carry;
 
-                    if (a + b < a || (a + b == type(uint).max && carry > 0))
+                    if (limbA + limbB < limbA || (limbA + limbB == type(uint).max && carry > 0))
                         carry = 1;
                     else
                         carry = 0;
@@ -172,8 +172,8 @@ custom types without the overhead of external function calls:
             }
         }
 
-        function limb(bigint memory _a, uint _limb) internal pure returns (uint) {
-            return _limb < _a.limbs.length ? _a.limbs[_limb] : 0;
+        function limb(bigint memory a, uint index) internal pure returns (uint) {
+            return index < a.limbs.length ? a.limbs[index] : 0;
         }
 
         function max(uint a, uint b) private pure returns (uint) {
@@ -196,7 +196,7 @@ It is possible to obtain the address of a library by converting
 the library type to the ``address`` type, i.e. using ``address(LibraryName)``.
 
 As the compiler does not know the address where the library will be deployed, the compiled hex code
-will contain placeholders of the form ``__$30bbc0abd4d6364515865950d3e0d10953$__``. The placeholder
+will contain placeholders of the form ``__$30bbc0abd4d6364515865950d3e0d10953$__`` `(format was different <v0.5.0) <https://docs.soliditylang.org/en/v0.4.26/contracts.html#libraries>`_. The placeholder
 is a 34 character prefix of the hex encoding of the keccak256 hash of the fully qualified library
 name, which would be for example ``libraries/bigint.sol:BigInt`` if the library was stored in a file
 called ``bigint.sol`` in a ``libraries/`` directory. Such bytecode is incomplete and should not be
@@ -215,7 +215,7 @@ In comparison to contracts, libraries are restricted in the following ways:
 (These might be lifted at a later point.)
 
 .. _library-selectors:
-.. index:: selector
+.. index:: ! selector; of a library function
 
 Function Signatures and Selectors in Libraries
 ==============================================

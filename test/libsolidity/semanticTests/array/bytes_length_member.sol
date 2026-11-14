@@ -10,12 +10,11 @@ contract c {
 
     bytes data;
 }
-// ====
-// compileViaYul: also
 // ----
 // getLength() -> 0
 // set(): 1, 2 -> true
-// gas irOptimized: 110439
-// gas legacy: 110726
-// gas legacyOptimized: 110567
+// gas irOptimized: 110390
+// gas legacy: 110951
+// gas legacyOptimized: 110577
+// gas ssaCFGOptimized: 110382
 // getLength() -> 68

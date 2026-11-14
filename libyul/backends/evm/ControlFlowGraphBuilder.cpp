@@ -23,8 +23,9 @@
 #include <libyul/AST.h>
 #include <libyul/Exceptions.h>
 #include <libyul/Utilities.h>
+#include <libyul/ControlFlowSideEffectsCollector.h>
+#include <libyul/backends/evm/EVMDialect.h>
 
-#include <libsolutil/cxx20.h>
 #include <libsolutil/Visitor.h>
 #include <libsolutil/Algorithms.h>
 
@@ -44,19 +45,29 @@
 
 using namespace solidity;
 using namespace solidity::yul;
-using namespace std;
 
 namespace
 {
-// Removes edges to blocks that are not reachable.
+/// Removes edges to blocks that are not reachable.
 void cleanUnreachable(CFG& _cfg)
 {
+	// If operation is a function call it adds the callee entry as child
+	auto const addFunctionsEntries = [&_cfg](CFG::BasicBlock* _node, auto&& _addChild)
+	{
+		for (auto const& operation: _node->operations)
+		{
+			if (auto const* functionCall = std::get_if<CFG::FunctionCall>(&operation.operation))
+			{
+				auto const functionInfo = _cfg.functionInfo.at(&(functionCall->function.get()));
+				_addChild(functionInfo.entry);
+			}
+		}
+	};
+
 	// Determine which blocks are reachable from the entry.
 	util::BreadthFirstSearch<CFG::BasicBlock*> reachabilityCheck{{_cfg.entry}};
-	for (auto const& functionInfo: _cfg.functionInfo | ranges::views::values)
-		reachabilityCheck.verticesToTraverse.emplace_back(functionInfo.entry);
-
 	reachabilityCheck.run([&](CFG::BasicBlock* _node, auto&& _addChild) {
+		addFunctionsEntries(_node, _addChild);
 		visit(util::GenericVisitor{
 			[&](CFG::BasicBlock::Jump const& _jump) {
 				_addChild(_jump.target);
@@ -73,22 +84,33 @@ void cleanUnreachable(CFG& _cfg)
 
 	// Remove all entries from unreachable nodes from the graph.
 	for (CFG::BasicBlock* node: reachabilityCheck.visited)
-		cxx20::erase_if(node->entries, [&](CFG::BasicBlock* entry) -> bool {
+		std::erase_if(node->entries, [&](CFG::BasicBlock* entry) -> bool {
 			return !reachabilityCheck.visited.count(entry);
 		});
+
+	// Remove functions which are never referenced.
+	_cfg.functions.erase(std::remove_if(_cfg.functions.begin(), _cfg.functions.end(), [&](auto const& item) {
+		return !reachabilityCheck.visited.count(_cfg.functionInfo.at(item).entry);
+	}), _cfg.functions.end());
+
+	// Remove functionInfos which are never referenced.
+	std::erase_if(_cfg.functionInfo, [&](auto const& entry) -> bool {
+		return !reachabilityCheck.visited.count(entry.second.entry);
+	});
 }
-// Sets the ``recursive`` member to ``true`` for all recursive function calls.
+
+/// Sets the ``recursive`` member to ``true`` for all recursive function calls.
 void markRecursiveCalls(CFG& _cfg)
 {
-	map<CFG::BasicBlock*, vector<CFG::FunctionCall*>> callsPerBlock;
+	std::map<CFG::BasicBlock*, std::vector<CFG::FunctionCall*>> callsPerBlock;
 	auto const& findCalls = [&](CFG::BasicBlock* _block)
 	{
 		if (auto* calls = util::valueOrNullptr(callsPerBlock, _block))
 			return *calls;
-		vector<CFG::FunctionCall*>& calls = callsPerBlock[_block];
+		std::vector<CFG::FunctionCall*>& calls = callsPerBlock[_block];
 		util::BreadthFirstSearch<CFG::BasicBlock*>{{_block}}.run([&](CFG::BasicBlock* _block, auto _addChild) {
 			for (auto& operation: _block->operations)
-				if (auto* functionCall = get_if<CFG::FunctionCall>(&operation.operation))
+				if (auto* functionCall = std::get_if<CFG::FunctionCall>(&operation.operation))
 					calls.emplace_back(functionCall);
 			std::visit(util::GenericVisitor{
 				[&](CFG::BasicBlock::MainExit const&) {},
@@ -102,7 +124,7 @@ void markRecursiveCalls(CFG& _cfg)
 					_addChild(_conditionalJump.nonZero);
 				},
 				[&](CFG::BasicBlock::FunctionReturn const&) {},
-				[&](CFG::BasicBlock::Terminated const&)	{},
+				[&](CFG::BasicBlock::Terminated const&) {},
 			}, _block->exit);
 		});
 		return calls;
@@ -124,6 +146,84 @@ void markRecursiveCalls(CFG& _cfg)
 			});
 		}
 }
+
+/// Marks each cut-vertex in the CFG, i.e. each block that begins a disconnected sub-graph of the CFG.
+/// Entering such a block means that control flow will never return to a previously visited block.
+void markStartsOfSubGraphs(CFG& _cfg)
+{
+	std::vector<CFG::BasicBlock*> entries;
+	entries.emplace_back(_cfg.entry);
+	for (auto&& functionInfo: _cfg.functionInfo | ranges::views::values)
+		entries.emplace_back(functionInfo.entry);
+	for (auto& entry: entries)
+	{
+		/**
+		 * Detect bridges following Algorithm 1 in https://arxiv.org/pdf/2108.07346.pdf
+		 * and mark the bridge targets as starts of sub-graphs.
+		 */
+		std::set<CFG::BasicBlock*> visited;
+		std::map<CFG::BasicBlock*, size_t> disc;
+		std::map<CFG::BasicBlock*, size_t> low;
+		std::map<CFG::BasicBlock*, CFG::BasicBlock*> parent;
+		size_t time = 0;
+		auto dfs = [&](CFG::BasicBlock* _u, auto _recurse) -> void {
+			visited.insert(_u);
+			disc[_u] = low[_u] = time;
+			time++;
+
+			std::vector<CFG::BasicBlock*> children = _u->entries;
+			visit(util::GenericVisitor{
+				[&](CFG::BasicBlock::Jump const& _jump) {
+					children.emplace_back(_jump.target);
+				},
+				[&](CFG::BasicBlock::ConditionalJump const& _jump) {
+					children.emplace_back(_jump.zero);
+					children.emplace_back(_jump.nonZero);
+				},
+				[&](CFG::BasicBlock::FunctionReturn const&) {},
+				[&](CFG::BasicBlock::Terminated const&) { _u->isStartOfSubGraph = true; },
+				[&](CFG::BasicBlock::MainExit const&) { _u->isStartOfSubGraph = true; }
+			}, _u->exit);
+			yulAssert(!util::contains(children, _u));
+
+			for (CFG::BasicBlock* v: children)
+				if (!visited.count(v))
+				{
+					parent[v] = _u;
+					_recurse(v, _recurse);
+					low[_u] = std::min(low[_u], low[v]);
+					if (low[v] > disc[_u])
+					{
+						// _u <-> v is a cut edge in the undirected graph
+						bool edgeVtoU = util::contains(_u->entries, v);
+						bool edgeUtoV = util::contains(v->entries, _u);
+						if (edgeVtoU && !edgeUtoV)
+							// Cut edge v -> _u
+							_u->isStartOfSubGraph = true;
+						else if (edgeUtoV && !edgeVtoU)
+							// Cut edge _u -> v
+							v->isStartOfSubGraph = true;
+					}
+				}
+				else if (v != parent[_u])
+					low[_u] = std::min(low[_u], disc[v]);
+		};
+		dfs(entry, dfs);
+	}
+}
+
+/// Marks each block that needs to maintain a clean stack. That is each block that has an outgoing
+/// path to a function return.
+void markNeedsCleanStack(CFG& _cfg)
+{
+	for (auto& functionInfo: _cfg.functionInfo | ranges::views::values)
+		for (CFG::BasicBlock* exit: functionInfo.exits)
+			util::BreadthFirstSearch<CFG::BasicBlock*>{{exit}}.run([&](CFG::BasicBlock* _block, auto _addChild) {
+				_block->needsCleanStack = true;
+				for (CFG::BasicBlock* entry: _block->entries)
+					_addChild(entry);
+			});
+}
 }
 
 std::unique_ptr<CFG> ControlFlowGraphBuilder::build(
@@ -135,12 +235,15 @@ std::unique_ptr<CFG> ControlFlowGraphBuilder::build(
 	auto result = std::make_unique<CFG>();
 	result->entry = &result->makeBlock(debugDataOf(_block));
 
-	ControlFlowGraphBuilder builder(*result, _analysisInfo, _dialect);
+	ControlFlowSideEffectsCollector sideEffects(_dialect, _block);
+	ControlFlowGraphBuilder builder(*result, _analysisInfo, sideEffects.functionSideEffects(), _dialect);
 	builder.m_currentBlock = result->entry;
 	builder(_block);
 
 	cleanUnreachable(*result);
 	markRecursiveCalls(*result);
+	markStartsOfSubGraphs(*result);
+	markNeedsCleanStack(*result);
 
 	// TODO: It might be worthwhile to run some further simplifications on the graph itself here.
 	// E.g. if there is a jump to a node that has the jumping node as its only entry, the nodes can be fused, etc.
@@ -151,17 +254,18 @@ std::unique_ptr<CFG> ControlFlowGraphBuilder::build(
 ControlFlowGraphBuilder::ControlFlowGraphBuilder(
 	CFG& _graph,
 	AsmAnalysisInfo const& _analysisInfo,
+	util::unordered_flat_map<FunctionDefinition const*, ControlFlowSideEffects> const& _functionSideEffects,
 	Dialect const& _dialect
 ):
 	m_graph(_graph),
 	m_info(_analysisInfo),
+	m_functionSideEffects(_functionSideEffects),
 	m_dialect(_dialect)
-{
-}
+{}
 
 StackSlot ControlFlowGraphBuilder::operator()(Literal const& _literal)
 {
-	return LiteralSlot{valueOfLiteral(_literal), _literal.debugData};
+	return LiteralSlot{_literal.value.value(), _literal.debugData};
 }
 
 StackSlot ControlFlowGraphBuilder::operator()(Identifier const& _identifier)
@@ -184,9 +288,9 @@ StackSlot ControlFlowGraphBuilder::operator()(FunctionCall const& _call)
 void ControlFlowGraphBuilder::operator()(VariableDeclaration const& _varDecl)
 {
 	yulAssert(m_currentBlock, "");
-	auto declaredVariables = _varDecl.variables | ranges::views::transform([&](TypedName const& _var) {
+	auto declaredVariables = _varDecl.variables | ranges::views::transform([&](NameWithDebugData const& _var) {
 		return VariableSlot{lookupVariable(_var.name), _var.debugData};
-	}) | ranges::to<vector<VariableSlot>>;
+	}) | ranges::to<std::vector<VariableSlot>>;
 	Stack input;
 	if (_varDecl.value)
 		input = visitAssignmentRightHandSide(*_varDecl.value, declaredVariables.size());
@@ -202,12 +306,12 @@ void ControlFlowGraphBuilder::operator()(Assignment const& _assignment)
 {
 	auto assignedVariables = _assignment.variableNames | ranges::views::transform([&](Identifier const& _var) {
 		return VariableSlot{lookupVariable(_var.name), _var.debugData};
-	}) | ranges::to<vector<VariableSlot>>;
+	}) | ranges::to<std::vector<VariableSlot>>;
 
-	yulAssert(m_currentBlock, "");
+	Stack input = visitAssignmentRightHandSide(*_assignment.value, assignedVariables.size());
+	yulAssert(m_currentBlock);
 	m_currentBlock->operations.emplace_back(CFG::Operation{
-		// input
-		visitAssignmentRightHandSide(*_assignment.value, assignedVariables.size()),
+		std::move(input),
 		// output
 		assignedVariables | ranges::to<Stack>,
 		// operation
@@ -216,7 +320,6 @@ void ControlFlowGraphBuilder::operator()(Assignment const& _assignment)
 }
 void ControlFlowGraphBuilder::operator()(ExpressionStatement const& _exprStmt)
 {
-	yulAssert(m_currentBlock, "");
 	std::visit(util::GenericVisitor{
 		[&](FunctionCall const& _call) {
 			Stack const& output = visitFunctionCall(_call);
@@ -224,23 +327,13 @@ void ControlFlowGraphBuilder::operator()(ExpressionStatement const& _exprStmt)
 		},
 		[&](auto const&) { yulAssert(false, ""); }
 	}, _exprStmt.expression);
-
-	// TODO: Ideally this would be done on the expression label and for all functions that always revert,
-	//       not only for builtins.
-	if (auto const* funCall = get_if<FunctionCall>(&_exprStmt.expression))
-		if (BuiltinFunction const* builtin = m_dialect.builtin(funCall->functionName.name))
-			if (builtin->controlFlowSideEffects.terminatesOrReverts())
-			{
-				m_currentBlock->exit = CFG::BasicBlock::Terminated{};
-				m_currentBlock = &m_graph.makeBlock(debugDataOf(*m_currentBlock));
-			}
 }
 
 void ControlFlowGraphBuilder::operator()(Block const& _block)
 {
 	ScopedSaveAndRestore saveScope(m_scope, m_info.scopes.at(&_block).get());
 	for (auto const& statement: _block.statements)
-		if (auto const* function = get_if<FunctionDefinition>(&statement))
+		if (auto const* function = std::get_if<FunctionDefinition>(&statement))
 			registerFunction(*function);
 	for (auto const& statement: _block.statements)
 		std::visit(*this, statement);
@@ -250,7 +343,8 @@ void ControlFlowGraphBuilder::operator()(If const& _if)
 {
 	auto& ifBranch = m_graph.makeBlock(debugDataOf(_if.body));
 	auto& afterIf = m_graph.makeBlock(debugDataOf(*m_currentBlock));
-	makeConditionalJump(debugDataOf(_if), std::visit(*this, *_if.condition), ifBranch, afterIf);
+	StackSlot condition = std::visit(*this, *_if.condition);
+	makeConditionalJump(debugDataOf(_if), std::move(condition), ifBranch, afterIf);
 	m_currentBlock = &ifBranch;
 	(*this)(_if.body);
 	jump(debugDataOf(_if.body), afterIf);
@@ -259,36 +353,38 @@ void ControlFlowGraphBuilder::operator()(If const& _if)
 void ControlFlowGraphBuilder::operator()(Switch const& _switch)
 {
 	yulAssert(m_currentBlock, "");
-	shared_ptr<DebugData const> preSwitchDebugData = debugDataOf(_switch);
+	langutil::DebugData::ConstPtr preSwitchDebugData = debugDataOf(_switch);
 
 	auto ghostVariableId = m_graph.ghostVariables.size();
-	YulString ghostVariableName("GHOST[" + to_string(ghostVariableId) + "]");
-	auto& ghostVar = m_graph.ghostVariables.emplace_back(Scope::Variable{""_yulstring, ghostVariableName});
+	YulName ghostVariableName("GHOST[" + std::to_string(ghostVariableId) + "]");
+	auto& ghostVar = m_graph.ghostVariables.emplace_back(Scope::Variable{ghostVariableName});
 
 	// Artificially generate:
 	// let <ghostVariable> := <switchExpression>
 	VariableSlot ghostVarSlot{ghostVar, debugDataOf(*_switch.expression)};
+	StackSlot expression = std::visit(*this, *_switch.expression);
 	m_currentBlock->operations.emplace_back(CFG::Operation{
-		Stack{std::visit(*this, *_switch.expression)},
+		Stack{std::move(expression)},
 		Stack{ghostVarSlot},
 		CFG::Assignment{_switch.debugData, {ghostVarSlot}}
 	});
 
-	BuiltinFunction const* equalityBuiltin = m_dialect.equalityFunction({});
-	yulAssert(equalityBuiltin, "");
+	std::optional<BuiltinHandle> const& equalityBuiltinHandle = m_dialect.equalityFunctionHandle();
+	yulAssert(equalityBuiltinHandle);
 
 	// Artificially generate:
 	// eq(<literal>, <ghostVariable>)
 	auto makeValueCompare = [&](Case const& _case) {
 		yul::FunctionCall const& ghostCall = m_graph.ghostCalls.emplace_back(yul::FunctionCall{
 			debugDataOf(_case),
-			yul::Identifier{{}, "eq"_yulstring},
+			BuiltinName{{}, *equalityBuiltinHandle},
 			{*_case.value, Identifier{{}, ghostVariableName}}
 		});
+		BuiltinFunction const& equalityBuiltin = m_dialect.builtin(*equalityBuiltinHandle);
 		CFG::Operation& operation = m_currentBlock->operations.emplace_back(CFG::Operation{
-			Stack{ghostVarSlot, LiteralSlot{valueOfLiteral(*_case.value), debugDataOf(*_case.value)}},
+			Stack{ghostVarSlot, LiteralSlot{_case.value->value.value(), debugDataOf(*_case.value)}},
 			Stack{TemporarySlot{ghostCall, 0}},
-			CFG::BuiltinCall{debugDataOf(_case), *equalityBuiltin, ghostCall, 2},
+			CFG::BuiltinCall{debugDataOf(_case), equalityBuiltin, ghostCall, 2},
 		});
 		return operation.output.front();
 	};
@@ -318,13 +414,13 @@ void ControlFlowGraphBuilder::operator()(Switch const& _switch)
 
 void ControlFlowGraphBuilder::operator()(ForLoop const& _loop)
 {
-	shared_ptr<DebugData const> preLoopDebugData = debugDataOf(_loop);
+	langutil::DebugData::ConstPtr preLoopDebugData = debugDataOf(_loop);
 	ScopedSaveAndRestore scopeRestore(m_scope, m_info.scopes.at(&_loop.pre).get());
 	(*this)(_loop.pre);
 
 	std::optional<bool> constantCondition;
-	if (auto const* literalCondition = get_if<yul::Literal>(_loop.condition.get()))
-		constantCondition = valueOfLiteral(*literalCondition) != 0;
+	if (auto const* literalCondition = std::get_if<yul::Literal>(_loop.condition.get()))
+		constantCondition = literalCondition->value.value() != 0;
 
 	CFG::BasicBlock& loopCondition = m_graph.makeBlock(debugDataOf(*_loop.condition));
 	CFG::BasicBlock& loopBody = m_graph.makeBlock(debugDataOf(_loop.body));
@@ -349,7 +445,8 @@ void ControlFlowGraphBuilder::operator()(ForLoop const& _loop)
 	else
 	{
 		jump(debugDataOf(_loop.pre), loopCondition);
-		makeConditionalJump(debugDataOf(*_loop.condition), std::visit(*this, *_loop.condition), loopBody, afterLoop);
+		StackSlot condition = std::visit(*this, *_loop.condition);
+		makeConditionalJump(debugDataOf(*_loop.condition), std::move(condition), loopBody, afterLoop);
 		m_currentBlock = &loopBody;
 		(*this)(_loop.body);
 		jump(debugDataOf(_loop.body), post);
@@ -379,6 +476,7 @@ void ControlFlowGraphBuilder::operator()(Leave const& leave_)
 {
 	yulAssert(m_currentFunction.has_value(), "");
 	m_currentBlock->exit = CFG::BasicBlock::FunctionReturn{debugDataOf(leave_), *m_currentFunction};
+	(*m_currentFunction)->exits.emplace_back(m_currentBlock);
 	m_currentBlock = &m_graph.makeBlock(debugDataOf(*m_currentBlock));
 }
 
@@ -391,39 +489,43 @@ void ControlFlowGraphBuilder::operator()(FunctionDefinition const& _function)
 
 	CFG::FunctionInfo& functionInfo = m_graph.functionInfo.at(&function);
 
-	ControlFlowGraphBuilder builder{m_graph, m_info, m_dialect};
+	ControlFlowGraphBuilder builder{m_graph, m_info, m_functionSideEffects, m_dialect};
 	builder.m_currentFunction = &functionInfo;
 	builder.m_currentBlock = functionInfo.entry;
 	builder(_function.body);
+	functionInfo.exits.emplace_back(builder.m_currentBlock);
 	builder.m_currentBlock->exit = CFG::BasicBlock::FunctionReturn{debugDataOf(_function), &functionInfo};
 }
 
-void ControlFlowGraphBuilder::registerFunction(FunctionDefinition const& _function)
+void ControlFlowGraphBuilder::registerFunction(FunctionDefinition const& _functionDefinition)
 {
 	yulAssert(m_scope, "");
-	yulAssert(m_scope->identifiers.count(_function.name), "");
-	Scope::Function& function = std::get<Scope::Function>(m_scope->identifiers.at(_function.name));
+	yulAssert(m_scope->identifiers.count(_functionDefinition.name), "");
+	Scope::Function& function = std::get<Scope::Function>(m_scope->identifiers.at(_functionDefinition.name));
 
-	yulAssert(m_info.scopes.at(&_function.body), "");
-	Scope* virtualFunctionScope = m_info.scopes.at(m_info.virtualBlocks.at(&_function).get()).get();
+	yulAssert(m_info.scopes.at(&_functionDefinition.body), "");
+	Scope* virtualFunctionScope = m_info.scopes.at(m_info.virtualBlocks.at(&_functionDefinition).get()).get();
 	yulAssert(virtualFunctionScope, "");
 
 	bool inserted = m_graph.functionInfo.emplace(std::make_pair(&function, CFG::FunctionInfo{
-		_function.debugData,
+		_functionDefinition.debugData,
 		function,
-		&m_graph.makeBlock(debugDataOf(_function.body)),
-		_function.parameters | ranges::views::transform([&](auto const& _param) {
+		_functionDefinition,
+		&m_graph.makeBlock(debugDataOf(_functionDefinition.body)),
+		_functionDefinition.parameters | ranges::views::transform([&](auto const& _param) {
 			return VariableSlot{
 				std::get<Scope::Variable>(virtualFunctionScope->identifiers.at(_param.name)),
 				_param.debugData
 			};
-		}) | ranges::to<vector>,
-		_function.returnVariables | ranges::views::transform([&](auto const& _retVar) {
+		}) | ranges::to<std::vector>,
+		_functionDefinition.returnVariables | ranges::views::transform([&](auto const& _retVar) {
 			return VariableSlot{
 				std::get<Scope::Variable>(virtualFunctionScope->identifiers.at(_retVar.name)),
 				_retVar.debugData
 			};
-		}) | ranges::to<vector>
+		}) | ranges::to<std::vector>,
+		{},
+		m_functionSideEffects.at(&_functionDefinition).canContinue
 	})).second;
 	yulAssert(inserted);
 }
@@ -433,41 +535,54 @@ Stack const& ControlFlowGraphBuilder::visitFunctionCall(FunctionCall const& _cal
 	yulAssert(m_scope, "");
 	yulAssert(m_currentBlock, "");
 
-	if (BuiltinFunction const* builtin = m_dialect.builtin(_call.functionName.name))
+	Stack const* output = nullptr;
+	bool canContinue = true;
+	if (BuiltinFunction const* builtin = resolveBuiltinFunction(_call.functionName, m_dialect))
 	{
 		Stack inputs;
 		for (auto&& [idx, arg]: _call.arguments | ranges::views::enumerate | ranges::views::reverse)
 			if (!builtin->literalArgument(idx).has_value())
 				inputs.emplace_back(std::visit(*this, arg));
 		CFG::BuiltinCall builtinCall{_call.debugData, *builtin, _call, inputs.size()};
-		return m_currentBlock->operations.emplace_back(CFG::Operation{
+		output = &m_currentBlock->operations.emplace_back(CFG::Operation{
 			// input
 			std::move(inputs),
 			// output
-			ranges::views::iota(0u, builtin->returns.size()) | ranges::views::transform([&](size_t _i) {
+			ranges::views::iota(0u, builtin->numReturns) | ranges::views::transform([&](size_t _i) {
 				return TemporarySlot{_call, _i};
 			}) | ranges::to<Stack>,
 			// operation
-			move(builtinCall)
+			std::move(builtinCall)
 		}).output;
+		canContinue = builtin->controlFlowSideEffects.canContinue;
 	}
 	else
 	{
-		Scope::Function const& function = lookupFunction(_call.functionName.name);
-		Stack inputs{FunctionCallReturnLabelSlot{_call}};
+		yulAssert(std::holds_alternative<Identifier>(_call.functionName));
+		Scope::Function const& function = lookupFunction(std::get<Identifier>(_call.functionName).name);
+		canContinue = m_graph.functionInfo.at(&function).canContinue;
+		Stack inputs;
+		if (canContinue)
+			inputs.emplace_back(FunctionCallReturnLabelSlot{_call});
 		for (auto const& arg: _call.arguments | ranges::views::reverse)
 			inputs.emplace_back(std::visit(*this, arg));
-		return m_currentBlock->operations.emplace_back(CFG::Operation{
+		output = &m_currentBlock->operations.emplace_back(CFG::Operation{
 			// input
 			std::move(inputs),
 			// output
-			ranges::views::iota(0u, function.returns.size()) | ranges::views::transform([&](size_t _i) {
+			ranges::views::iota(0u, function.numReturns) | ranges::views::transform([&](size_t _i) {
 				return TemporarySlot{_call, _i};
 			}) | ranges::to<Stack>,
 			// operation
-			CFG::FunctionCall{_call.debugData, function, _call}
+			CFG::FunctionCall{_call.debugData, function, _call, /* recursive */ false, canContinue}
 		}).output;
 	}
+	if (!canContinue)
+	{
+		m_currentBlock->exit = CFG::BasicBlock::Terminated{};
+		m_currentBlock = &m_graph.makeBlock(debugDataOf(*m_currentBlock));
+	}
+	return *output;
 }
 
 Stack ControlFlowGraphBuilder::visitAssignmentRightHandSide(Expression const& _expression, size_t _expectedSlotCount)
@@ -485,7 +600,7 @@ Stack ControlFlowGraphBuilder::visitAssignmentRightHandSide(Expression const& _e
 	}, _expression);
 }
 
-Scope::Function const& ControlFlowGraphBuilder::lookupFunction(YulString _name) const
+Scope::Function const& ControlFlowGraphBuilder::lookupFunction(YulName _name) const
 {
 	Scope::Function const* function = nullptr;
 	yulAssert(m_scope->lookup(_name, util::GenericVisitor{
@@ -496,7 +611,7 @@ Scope::Function const& ControlFlowGraphBuilder::lookupFunction(YulString _name) 
 	return *function;
 }
 
-Scope::Variable const& ControlFlowGraphBuilder::lookupVariable(YulString _name) const
+Scope::Variable const& ControlFlowGraphBuilder::lookupVariable(YulName _name) const
 {
 	yulAssert(m_scope, "");
 	Scope::Variable const* var = nullptr;
@@ -515,7 +630,7 @@ Scope::Variable const& ControlFlowGraphBuilder::lookupVariable(YulString _name) 
 }
 
 void ControlFlowGraphBuilder::makeConditionalJump(
-	shared_ptr<DebugData const> _debugData,
+	langutil::DebugData::ConstPtr _debugData,
 	StackSlot _condition,
 	CFG::BasicBlock& _nonZero,
 	CFG::BasicBlock& _zero
@@ -523,8 +638,8 @@ void ControlFlowGraphBuilder::makeConditionalJump(
 {
 	yulAssert(m_currentBlock, "");
 	m_currentBlock->exit = CFG::BasicBlock::ConditionalJump{
-		move(_debugData),
-		move(_condition),
+		std::move(_debugData),
+		std::move(_condition),
 		&_nonZero,
 		&_zero
 	};
@@ -534,13 +649,13 @@ void ControlFlowGraphBuilder::makeConditionalJump(
 }
 
 void ControlFlowGraphBuilder::jump(
-	shared_ptr<DebugData const> _debugData,
+	langutil::DebugData::ConstPtr _debugData,
 	CFG::BasicBlock& _target,
 	bool backwards
 )
 {
 	yulAssert(m_currentBlock, "");
-	m_currentBlock->exit = CFG::BasicBlock::Jump{move(_debugData), &_target, backwards};
+	m_currentBlock->exit = CFG::BasicBlock::Jump{std::move(_debugData), &_target, backwards};
 	_target.entries.emplace_back(m_currentBlock);
 	m_currentBlock = &_target;
 }

@@ -8,18 +8,20 @@ contract C {
     }
 
     // To avoid dependency on exact length.
-    function f() public view returns (bool) { return address(this).code.length > 400; }
+    function f() public view returns (bool) { return address(this).code.length > 380; }
     function g() public view returns (uint) { return address(0).code.length; }
     function h() public view returns (uint) { return address(1).code.length; }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // constructor() ->
-// gas irOptimized: 199723
-// gas legacy: 241124
-// gas legacyOptimized: 155549
+// gas irOptimized: 70908
+// gas irOptimized code: 94400
+// gas legacy: 82688
+// gas legacy code: 153800
+// gas legacyOptimized: 69675
+// gas legacyOptimized code: 79200
+// gas ssaCFGOptimized: 71116
+// gas ssaCFGOptimized code: 92800
 // initCode() -> 0x20, 0
 // f() -> true
 // g() -> 0

@@ -9,9 +9,6 @@ contract c {
         data.pop();
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // test() ->
 // storageEmpty -> 1

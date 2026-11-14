@@ -23,14 +23,17 @@
 #include <libsolidity/analysis/ContractLevelChecker.h>
 
 #include <libsolidity/ast/AST.h>
+#include <libsolidity/ast/ASTUtils.h>
 #include <libsolidity/ast/TypeProvider.h>
 #include <libsolidity/analysis/TypeChecker.h>
 #include <libsolutil/FunctionSelector.h>
 #include <liblangutil/ErrorReporter.h>
 
+#include <fmt/format.h>
+
+#include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/view/reverse.hpp>
 
-using namespace std;
 using namespace solidity;
 using namespace solidity::langutil;
 using namespace solidity::frontend;
@@ -39,7 +42,7 @@ namespace
 {
 
 template <class T, class B>
-bool hasEqualParameters(T const& _a, B const& _b)
+bool hasEqualExternalCallableParameters(T const& _a, B const& _b)
 {
 	return FunctionType(_a).asExternallyCallableFunction(false)->hasEqualParameterTypes(
 		*FunctionType(_b).asExternallyCallableFunction(false)
@@ -47,10 +50,10 @@ bool hasEqualParameters(T const& _a, B const& _b)
 }
 
 template<typename T>
-map<ASTString, vector<T const*>> filterDeclarations(
-	map<ASTString, vector<Declaration const*>> const& _declarations)
+std::map<ASTString, std::vector<T const*>> filterDeclarations(
+	std::map<ASTString, std::vector<Declaration const*>> const& _declarations)
 {
-	map<ASTString, vector<T const*>> filteredDeclarations;
+	std::map<ASTString, std::vector<T const*>> filteredDeclarations;
 	for (auto const& [name, overloads]: _declarations)
 		for (auto const* declaration: overloads)
 			if (auto typedDeclaration = dynamic_cast<T const*>(declaration))
@@ -96,15 +99,49 @@ bool ContractLevelChecker::check(ContractDefinition const& _contract)
 	checkBaseABICompatibility(_contract);
 	checkPayableFallbackWithoutReceive(_contract);
 	checkStorageSize(_contract);
+	checkStorageLayoutSpecifier(_contract);
 
 	return !Error::containsErrors(m_errorReporter.errors());
 }
 
+void ContractLevelChecker::checkStorageLayoutSpecifier(ContractDefinition const& _contract)
+{
+	if (_contract.storageLayoutSpecifier())
+	{
+		solAssert(!_contract.isLibrary() && !_contract.isInterface());
+
+		if (_contract.abstract())
+			m_errorReporter.typeError(
+				7587_error,
+				_contract.storageLayoutSpecifier()->location(),
+				"Storage layout cannot be specified for abstract contracts."
+			);
+	}
+
+	for (auto const& baseContractSpecifier: _contract.baseContracts())
+	{
+		auto const* baseContract = dynamic_cast<ContractDefinition const*>(
+			baseContractSpecifier->name().annotation().referencedDeclaration
+		);
+
+		solAssert(baseContract);
+		if (baseContract->storageLayoutSpecifier())
+			m_errorReporter.typeError(
+				8894_error,
+				baseContractSpecifier->location(),
+				SecondarySourceLocation().append(
+					"Custom storage layout defined here:",
+					baseContract->storageLayoutSpecifier()->location()
+				),
+				"Cannot inherit from a contract with a custom storage layout."
+			);
+	}
+}
 void ContractLevelChecker::checkDuplicateFunctions(ContractDefinition const& _contract)
 {
 	/// Checks that two functions with the same name defined in this contract have different
 	/// argument types and that there is at most one constructor.
-	map<string, vector<FunctionDefinition const*>> functions;
+	std::map<std::string, std::vector<FunctionDefinition const*>> functions;
 	FunctionDefinition const* constructor = nullptr;
 	FunctionDefinition const* fallback = nullptr;
 	FunctionDefinition const* receive = nullptr;
@@ -155,7 +192,7 @@ void ContractLevelChecker::checkDuplicateEvents(ContractDefinition const& _contr
 {
 	/// Checks that two events with the same name defined in this contract have different
 	/// argument types
-	map<string, vector<EventDefinition const*>> events;
+	std::map<std::string, std::vector<EventDefinition const*>> events;
 	for (auto const* contract: _contract.annotation().linearizedBaseContracts)
 		for (EventDefinition const* event: contract->events())
 			events[event->name()].push_back(event);
@@ -193,18 +230,18 @@ void ContractLevelChecker::checkReceiveFunction(ContractDefinition const& _contr
 }
 
 template <class T>
-void ContractLevelChecker::findDuplicateDefinitions(map<string, vector<T>> const& _definitions)
+void ContractLevelChecker::findDuplicateDefinitions(std::map<std::string, std::vector<T>> const& _definitions)
 {
 	for (auto const& it: _definitions)
 	{
-		vector<T> const& overloads = it.second;
-		set<size_t> reported;
+		std::vector<T> const& overloads = it.second;
+		std::set<size_t> reported;
 		for (size_t i = 0; i < overloads.size() && !reported.count(i); ++i)
 		{
 			SecondarySourceLocation ssl;
 
 			for (size_t j = i + 1; j < overloads.size(); ++j)
-				if (hasEqualParameters(*overloads[i], *overloads[j]))
+				if (hasEqualExternalCallableParameters(*overloads[i], *overloads[j]))
 				{
 					solAssert(
 						(
@@ -226,15 +263,15 @@ void ContractLevelChecker::findDuplicateDefinitions(map<string, vector<T>> const
 			if (ssl.infos.size() > 0)
 			{
 				ErrorId error;
-				string message;
-				if constexpr (is_same_v<T, FunctionDefinition const*>)
+				std::string message;
+				if constexpr (std::is_same_v<T, FunctionDefinition const*>)
 				{
 					error = 1686_error;
 					message = "Function with same name and parameter types defined twice.";
 				}
 				else
 				{
-					static_assert(is_same_v<T, EventDefinition const*>, "Expected \"FunctionDefinition const*\" or \"EventDefinition const*\"");
+					static_assert(std::is_same_v<T, EventDefinition const*>, "Expected \"FunctionDefinition const*\" or \"EventDefinition const*\"");
 					error = 5883_error;
 					message = "Event with same name and parameter types defined twice.";
 				}
@@ -256,7 +293,7 @@ void ContractLevelChecker::checkAbstractDefinitions(ContractDefinition const& _c
 {
 	// Collects functions, static variable getters and modifiers. If they
 	// override (unimplemented) base class ones, they are replaced.
-	set<OverrideProxy, OverrideProxy::CompareBySignature> proxies;
+	std::set<OverrideProxy, OverrideProxy::CompareBySignature> proxies;
 
 	auto registerProxy = [&proxies](OverrideProxy const& _overrideProxy)
 	{
@@ -284,9 +321,6 @@ void ContractLevelChecker::checkAbstractDefinitions(ContractDefinition const& _c
 	}
 
 	// Set to not fully implemented if at least one flag is false.
-	// Note that `_contract.annotation().unimplementedDeclarations` has already been
-	// pre-filled by `checkBaseConstructorArguments`.
-	//
 	for (auto const& proxy: proxies)
 		if (proxy.unimplemented())
 			_contract.annotation().unimplementedDeclarations->push_back(proxy.declaration());
@@ -324,7 +358,7 @@ void ContractLevelChecker::checkAbstractDefinitions(ContractDefinition const& _c
 
 void ContractLevelChecker::checkBaseConstructorArguments(ContractDefinition const& _contract)
 {
-	vector<ContractDefinition const*> const& bases = _contract.annotation().linearizedBaseContracts;
+	std::vector<ContractDefinition const*> const& bases = _contract.annotation().linearizedBaseContracts;
 
 	// Determine the arguments that are used for the base constructors.
 	for (ContractDefinition const* contract: bases)
@@ -362,11 +396,27 @@ void ContractLevelChecker::checkBaseConstructorArguments(ContractDefinition cons
 
 	// check that we get arguments for all base constructors that need it.
 	// If not mark the contract as abstract (not fully implemented)
-	for (ContractDefinition const* contract: bases)
-		if (FunctionDefinition const* constructor = contract->constructor())
-			if (contract != &_contract && !constructor->parameters().empty())
-				if (!_contract.annotation().baseConstructorArguments.count(constructor))
-					_contract.annotation().unimplementedDeclarations->push_back(constructor);
+	if (_contract.contractKind() == ContractKind::Contract && !_contract.abstract())
+		for (ContractDefinition const* baseContract: bases)
+			if (FunctionDefinition const* baseConstructor = baseContract->constructor())
+				if (
+					baseContract != &_contract &&
+					!baseConstructor->parameters().empty() &&
+					_contract.annotation().baseConstructorArguments.count(baseConstructor) == 0
+				)
+					m_errorReporter.typeError(
+						3415_error,
+						_contract.location(),
+						SecondarySourceLocation{}.append(
+							"Base constructor parameters:",
+							baseConstructor->parameterList().location()
+						),
+						fmt::format(
+							"No arguments passed to the base constructor. "
+							"Specify the arguments or mark \"{}\" as abstract.",
+							*_contract.annotation().canonicalName
+						)
+					);
 }
 
 void ContractLevelChecker::annotateBaseConstructorArguments(
@@ -415,7 +465,7 @@ void ContractLevelChecker::annotateBaseConstructorArguments(
 
 void ContractLevelChecker::checkExternalTypeClashes(ContractDefinition const& _contract)
 {
-	map<string, vector<pair<Declaration const*, FunctionTypePointer>>> externalDeclarations;
+	std::map<std::string, std::vector<std::pair<Declaration const*, FunctionTypePointer>>> externalDeclarations;
 	for (ContractDefinition const* contract: _contract.annotation().linearizedBaseContracts)
 	{
 		for (FunctionDefinition const* f: contract->definedFunctions())
@@ -452,7 +502,7 @@ void ContractLevelChecker::checkExternalTypeClashes(ContractDefinition const& _c
 
 void ContractLevelChecker::checkHashCollisions(ContractDefinition const& _contract)
 {
-	set<util::FixedHash<4>> hashes;
+	std::set<util::FixedHash<4>> hashes;
 	for (auto const& it: _contract.interfaceFunctionList())
 	{
 		util::FixedHash<4> const& hash = it.first;
@@ -460,7 +510,7 @@ void ContractLevelChecker::checkHashCollisions(ContractDefinition const& _contra
 			m_errorReporter.fatalTypeError(
 				1860_error,
 				_contract.location(),
-				string("Function signature hash collision for ") + it.second->externalSignature()
+				std::string("Function signature hash collision for ") + it.second->externalSignature()
 			);
 		hashes.insert(hash);
 	}
@@ -541,16 +591,16 @@ void ContractLevelChecker::checkPayableFallbackWithoutReceive(ContractDefinition
 
 void ContractLevelChecker::checkStorageSize(ContractDefinition const& _contract)
 {
-	bigint size = 0;
-	for (ContractDefinition const* contract: _contract.annotation().linearizedBaseContracts | ranges::views::reverse)
-		for (VariableDeclaration const* variable: contract->stateVariables())
-			if (!(variable->isConstant() || variable->immutable()))
-			{
-				size += variable->annotation().type->storageSizeUpperBound();
-				if (size >= bigint(1) << 256)
-				{
-					m_errorReporter.typeError(7676_error, _contract.location(), "Contract requires too much storage.");
-					break;
-				}
-			}
+	using enum VariableDeclaration::Location;
+	for (VariableDeclaration::Location location: {Unspecified, Transient})
+	{
+		bigint size = contractStorageSizeUpperBound(_contract, location);
+		if (size >= bigint(1) << 256)
+		{
+			if (location == Unspecified)
+				m_errorReporter.typeError(7676_error, _contract.location(), "Contract requires too much storage.");
+			else
+				m_errorReporter.typeError(5026_error, _contract.location(), "Contract requires too much transient storage.");
+		}
+	}
 }

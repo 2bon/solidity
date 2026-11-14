@@ -9,8 +9,5 @@ contract C {
         return (m[0], m[16], m[32]);
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 2, 3, 4

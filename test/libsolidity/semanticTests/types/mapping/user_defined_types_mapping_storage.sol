@@ -19,9 +19,6 @@ contract C {
 		return uintMap[3] == 4;
 	}
 }
-
-// ====
-// compileViaYul: also
 // ----
 // library: L
 // testAB() -> true

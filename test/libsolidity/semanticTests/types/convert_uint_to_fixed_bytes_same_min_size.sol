@@ -3,8 +3,5 @@ contract Test {
         return bytes1(h);
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // UintToBytes(uint8): 0x61 -> "a"

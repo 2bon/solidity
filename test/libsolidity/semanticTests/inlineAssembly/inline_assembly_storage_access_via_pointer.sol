@@ -17,10 +17,6 @@ contract C {
         return true;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> true
 // a() -> 7

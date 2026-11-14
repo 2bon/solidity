@@ -32,4 +32,7 @@ import "B";
 contract D is C {
     constructor() validate B() validate C() validate {}
 }
+// ====
 // ----
+// Warning 9511: (B:0-19): ABI coder v1 is deprecated and scheduled for removal. Use ABI coder v2 instead.
+// Warning 9511: (C:0-19): ABI coder v1 is deprecated and scheduled for removal. Use ABI coder v2 instead.

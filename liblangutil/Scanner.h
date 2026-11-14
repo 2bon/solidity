@@ -62,14 +62,11 @@
 namespace solidity::langutil
 {
 
-class AstRawString;
-class AstValueFactory;
-class ParserRecorder;
-
 enum class ScannerKind
 {
 	Solidity,
-	Yul
+	Yul,
+	SpecialComment
 };
 
 enum class ScannerError
@@ -81,6 +78,7 @@ enum class ScannerError
 	IllegalHexDigit,
 	IllegalCommentTerminator,
 	IllegalEscapeSequence,
+	UnicodeCharacterInNonUnicodeString,
 	IllegalCharacterInString,
 	IllegalStringEndQuote,
 	IllegalNumberSeparator,
@@ -100,11 +98,13 @@ class Scanner
 {
 	friend class LiteralScope;
 public:
-	explicit Scanner(CharStream& _source):
+	explicit Scanner(CharStream& _source, ScannerKind _kind = ScannerKind::Solidity):
 		m_source(_source),
 		m_sourceName{std::make_shared<std::string>(_source.name())}
 	{
 		reset();
+		if (_kind != ScannerKind::Solidity)
+			setScannerMode(_kind);
 	}
 
 	/// Resets scanner to the start of input.
@@ -159,6 +159,8 @@ public:
 	std::string const& currentCommentLiteral() const { return m_skippedComments[Current].literal; }
 	/// Called by the parser during FunctionDefinition parsing to clear the current comment
 	void clearCurrentCommentLiteral() { m_skippedComments[Current].literal.clear(); }
+
+	ScannerKind scannerKind() const { return m_kind; }
 
 	///@}
 

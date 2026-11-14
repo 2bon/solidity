@@ -5,8 +5,5 @@ contract Scope {
         stateVar = Scope.stateVar;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // getStateVar() -> 42

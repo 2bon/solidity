@@ -16,9 +16,6 @@ contract C {
         x += 3;
     }
 }
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // f1() ->
 // x() -> 0x08

@@ -12,12 +12,7 @@ contract C {
 // SMTEngine: all
 // SMTIgnoreCex: yes
 // ----
-// Warning 1218: (150-164): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (168-182): CHC: Error trying to invoke SMT solver.
-// Warning 1218: (186-200): CHC: Error trying to invoke SMT solver.
-// Warning 6328: (150-164): CHC: Assertion violation might happen here.
-// Warning 6328: (168-182): CHC: Assertion violation might happen here.
-// Warning 6328: (186-200): CHC: Assertion violation might happen here.
-// Warning 4661: (150-164): BMC: Assertion violation happens here.
-// Warning 4661: (168-182): BMC: Assertion violation happens here.
-// Warning 4661: (186-200): BMC: Assertion violation happens here.
+// Warning 6328: (150-164): CHC: Assertion violation happens here.\nCounterexample:\n\nk = 0x2e16\ns = 0x2e15\nr = 0x2297\n\nTransaction trace:\nC.constructor()\nC.f(data) -- counterexample incomplete; parameter name used instead of value
+// Warning 6328: (168-182): CHC: Assertion violation happens here.\nCounterexample:\n\nk = 0x2e16\ns = 0x2e15\nr = 0x2e16\n\nTransaction trace:\nC.constructor()\nC.f(data) -- counterexample incomplete; parameter name used instead of value
+// Warning 6328: (186-200): CHC: Assertion violation happens here.\nCounterexample:\n\nk = 0x2e15\ns = 0x2e16\nr = 0x2e17\n\nTransaction trace:\nC.constructor()\nC.f(data) -- counterexample incomplete; parameter name used instead of value
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

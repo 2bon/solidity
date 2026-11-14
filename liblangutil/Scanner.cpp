@@ -61,12 +61,11 @@
 #include <tuple>
 #include <array>
 
-using namespace std;
 
 namespace solidity::langutil
 {
 
-string to_string(ScannerError _errorCode)
+std::string to_string(ScannerError _errorCode)
 {
 	switch (_errorCode)
 	{
@@ -76,6 +75,7 @@ string to_string(ScannerError _errorCode)
 		case ScannerError::IllegalHexDigit: return "Hexadecimal digit missing or invalid.";
 		case ScannerError::IllegalCommentTerminator: return "Expected multi-line comment-terminator.";
 		case ScannerError::IllegalEscapeSequence: return "Invalid escape sequence.";
+		case ScannerError::UnicodeCharacterInNonUnicodeString: return "Invalid character in string. If you are trying to use Unicode characters, use a unicode\"...\" string literal.";
 		case ScannerError::IllegalCharacterInString: return "Invalid character in string.";
 		case ScannerError::IllegalStringEndQuote: return "Expected string end-quote.";
 		case ScannerError::IllegalNumberSeparator: return "Invalid use of number separator '_'.";
@@ -91,7 +91,7 @@ string to_string(ScannerError _errorCode)
 }
 
 
-ostream& operator<<(ostream& os, ScannerError _errorCode)
+std::ostream& operator<<(std::ostream& os, ScannerError _errorCode)
 {
 	return os << to_string(_errorCode);
 }
@@ -274,12 +274,12 @@ namespace
 ///          to the user.
 static ScannerError validateBiDiMarkup(CharStream& _stream, size_t _startPosition)
 {
-	static array<pair<string_view, int>, 5> constexpr directionalSequences{
-		pair<string_view, int>{"\xE2\x80\xAD", 1}, // U+202D (LRO - Left-to-Right Override)
-		pair<string_view, int>{"\xE2\x80\xAE", 1}, // U+202E (RLO - Right-to-Left Override)
-		pair<string_view, int>{"\xE2\x80\xAA", 1}, // U+202A (LRE - Left-to-Right Embedding)
-		pair<string_view, int>{"\xE2\x80\xAB", 1}, // U+202B (RLE - Right-to-Left Embedding)
-		pair<string_view, int>{"\xE2\x80\xAC", -1} // U+202C (PDF - Pop Directional Formatting
+	static std::array<std::pair<std::string_view, int>, 5> constexpr directionalSequences{
+		std::pair<std::string_view, int>{"\xE2\x80\xAD", 1}, // U+202D (LRO - Left-to-Right Override)
+		std::pair<std::string_view, int>{"\xE2\x80\xAE", 1}, // U+202E (RLO - Right-to-Left Override)
+		std::pair<std::string_view, int>{"\xE2\x80\xAA", 1}, // U+202A (LRE - Left-to-Right Embedding)
+		std::pair<std::string_view, int>{"\xE2\x80\xAB", 1}, // U+202B (RLE - Right-to-Left Embedding)
+		std::pair<std::string_view, int>{"\xE2\x80\xAC", -1} // U+202C (PDF - Pop Directional Formatting
 	};
 
 	size_t endPosition = _stream.position();
@@ -424,7 +424,7 @@ Token Scanner::scanMultiLineDocComment()
 
 	while (!isSourcePastEndOfInput())
 	{
-		//handle newlines in multline comments
+		// handle newlines in multiline comments
 		if (atEndOfLine())
 		{
 			skipWhitespace();
@@ -539,8 +539,8 @@ void Scanner::scanToken()
 
 	Token token;
 	// M and N are for the purposes of grabbing different type sizes
-	unsigned m;
-	unsigned n;
+	unsigned m = 0;
+	unsigned n = 0;
 	do
 	{
 		// Remember the position of the next token
@@ -711,7 +711,7 @@ void Scanner::scanToken()
 		default:
 			if (isIdentifierStart(m_char))
 			{
-				tie(token, m, n) = scanIdentifierOrKeyword();
+				std::tie(token, m, n) = scanIdentifierOrKeyword();
 
 				// Special case for hexadecimal literals
 				if (token == Token::Hex)
@@ -756,7 +756,7 @@ void Scanner::scanToken()
 	m_tokens[NextNext].location.end = static_cast<int>(sourcePos());
 	m_tokens[NextNext].location.sourceName = m_sourceName;
 	m_tokens[NextNext].token = token;
-	m_tokens[NextNext].extendedTokenInfo = make_tuple(m, n);
+	m_tokens[NextNext].extendedTokenInfo = std::make_tuple(m, n);
 }
 
 bool Scanner::scanEscape()
@@ -826,27 +826,48 @@ Token Scanner::scanString(bool const _isUnicode)
 	char const quote = m_char;
 	advance();  // consume quote
 	LiteralScope literal(this, LITERAL_TYPE_STRING);
-	while (m_char != quote && !isSourcePastEndOfInput() && !isUnicodeLinebreak())
+	// for source location comments we allow multiline string literals
+	while (m_char != quote && !isSourcePastEndOfInput() && (!isUnicodeLinebreak() || m_kind == ScannerKind::SpecialComment))
 	{
 		char c = m_char;
 		advance();
-		if (c == '\\')
+
+		if (m_kind == ScannerKind::SpecialComment)
 		{
-			if (isSourcePastEndOfInput() || !scanEscape())
-				return setError(ScannerError::IllegalEscapeSequence);
+			if (c == '\\')
+			{
+				if (isSourcePastEndOfInput())
+					return setError(ScannerError::IllegalEscapeSequence);
+				advance();
+			}
+			else
+				addLiteralChar(c);
 		}
 		else
 		{
-			// Report error on non-printable characters in string literals, however
-			// allow anything for unicode string literals, because their validity will
-			// be verified later (in the syntax checker).
-			//
-			// We are using a manual range and not isprint() to avoid
-			// any potential complications with locale.
-			if (!_isUnicode && (static_cast<unsigned>(c) <= 0x1f || static_cast<unsigned>(c) >= 0x7f))
-				return setError(ScannerError::IllegalCharacterInString);
-			addLiteralChar(c);
+			if (c == '\\')
+			{
+				if (isSourcePastEndOfInput() || !scanEscape())
+					return setError(ScannerError::IllegalEscapeSequence);
+			}
+			else
+			{
+				// Report error on non-printable characters in string literals, however
+				// allow anything for unicode string literals, because their validity will
+				// be verified later (in the syntax checker).
+				//
+				// We are using a manual range and not isprint() to avoid
+				// any potential complications with locale.
+				if (!_isUnicode && (static_cast<unsigned>(c) <= 0x1f || static_cast<unsigned>(c) >= 0x7f))
+				{
+					if (m_kind == ScannerKind::Yul)
+						return setError(ScannerError::IllegalCharacterInString);
+					return setError(ScannerError::UnicodeCharacterInNonUnicodeString);
+				}
+				addLiteralChar(c);
+			}
 		}
+
 	}
 	if (m_char != quote)
 		return setError(ScannerError::IllegalStringEndQuote);
@@ -1006,7 +1027,7 @@ Token Scanner::scanNumber(char _charSeen)
 	return Token::Number;
 }
 
-tuple<Token, unsigned, unsigned> Scanner::scanIdentifierOrKeyword()
+std::tuple<Token, unsigned, unsigned> Scanner::scanIdentifierOrKeyword()
 {
 	solAssert(isIdentifierStart(m_char), "");
 	LiteralScope literal(this, LITERAL_TYPE_STRING);
@@ -1015,15 +1036,23 @@ tuple<Token, unsigned, unsigned> Scanner::scanIdentifierOrKeyword()
 	while (isIdentifierPart(m_char) || (m_char == '.' && m_kind == ScannerKind::Yul))
 		addLiteralCharAndAdvance();
 	literal.complete();
+
 	auto const token = TokenTraits::fromIdentifierOrKeyword(m_tokens[NextNext].literal);
-	if (m_kind == ScannerKind::Yul)
+	switch (m_kind)
 	{
+	case ScannerKind::SpecialComment:
+		// there are no keywords in special comments
+		return std::make_tuple(Token::Identifier, 0, 0);
+	case ScannerKind::Solidity:
+		break;
+	case ScannerKind::Yul:
 		// Turn Solidity identifier into a Yul keyword
 		if (m_tokens[NextNext].literal == "leave")
 			return std::make_tuple(Token::Leave, 0, 0);
 		// Turn non-Yul keywords into identifiers.
 		if (!TokenTraits::isYulKeyword(std::get<0>(token)))
 			return std::make_tuple(Token::Identifier, 0, 0);
+		break;
 	}
 	return token;
 }

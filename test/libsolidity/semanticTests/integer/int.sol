@@ -232,9 +232,6 @@ contract test {
 		return true;
 	}
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // intMinA() -> true
 // intMinB() -> true

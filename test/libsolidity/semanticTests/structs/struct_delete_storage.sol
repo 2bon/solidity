@@ -17,8 +17,5 @@ contract C {
         assert(a == 17);
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() ->

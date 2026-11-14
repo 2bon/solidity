@@ -31,14 +31,17 @@ contract test {
         ret = prb_scale(1).div(ret);
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // constructor()
-// gas irOptimized: 465789
-// gas legacy: 672749
-// gas legacyOptimized: 479606
+// gas irOptimized: 77800
+// gas irOptimized code: 307400
+// gas legacy: 92110
+// gas legacy code: 523600
+// gas legacyOptimized: 82667
+// gas legacyOptimized code: 369200
+// gas ssaCFGOptimized: 77884
+// gas ssaCFGOptimized code: 312200
 // prb_pi() -> 3141592656369545286
-// gas irOptimized: 57478
-// gas legacy: 98903
-// gas legacyOptimized: 75735
+// gas irOptimized: 55033
+// gas legacy: 100657
+// gas legacyOptimized: 74311

@@ -3,8 +3,5 @@ contract Test {
         return uint64(uint32(s));
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // bytesToUint(bytes4): "abcd" -> 0x61626364

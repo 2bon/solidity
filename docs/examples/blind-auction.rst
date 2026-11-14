@@ -16,11 +16,11 @@ Simple Open Auction
 ===================
 
 The general idea of the following simple auction contract is that everyone can
-send their bids during a bidding period. The bids already include sending money
-/ Ether in order to bind the bidders to their bid. If the highest bid is
-raised, the previous highest bidder gets their money back.  After the end of
+send their bids during a bidding period. The bids already include sending some compensation,
+e.g. Ether, in order to bind the bidders to their bid. If the highest bid is
+raised, the previous highest bidder gets their Ether back.  After the end of
 the bidding period, the contract has to be called manually for the beneficiary
-to receive their money - contracts cannot activate themselves.
+to receive their Ether - contracts cannot activate themselves.
 
 .. code-block:: solidity
 
@@ -92,19 +92,19 @@ to receive their money - contracts cannot activate themselves.
                 revert AuctionAlreadyEnded();
 
             // If the bid is not higher, send the
-            // money back (the revert statement
+            // Ether back (the revert statement
             // will revert all changes in this
             // function execution including
-            // it having received the money).
+            // it having received the Ether).
             if (msg.value <= highestBid)
                 revert BidNotHighEnough(highestBid);
 
             if (highestBid != 0) {
-                // Sending back the money by simply using
+                // Sending back the Ether by simply using
                 // highestBidder.send(highestBid) is a security risk
                 // because it could execute an untrusted contract.
                 // It is always safer to let the recipients
-                // withdraw their money themselves.
+                // withdraw their Ether themselves.
                 pendingReturns[highestBidder] += highestBid;
             }
             highestBidder = msg.sender;
@@ -118,13 +118,14 @@ to receive their money - contracts cannot activate themselves.
             if (amount > 0) {
                 // It is important to set this to zero because the recipient
                 // can call this function again as part of the receiving call
-                // before `send` returns.
+                // before `call` returns.
                 pendingReturns[msg.sender] = 0;
 
                 // msg.sender is not of type `address payable` and must be
                 // explicitly converted using `payable(msg.sender)` in order
-                // use the member function `send()`.
-                if (!payable(msg.sender).send(amount)) {
+                // use the member function `call()`.
+                (bool success, ) = payable(msg.sender).call{value: amount}("");
+                if (!success) {
                     // No need to call throw here, just reset the amount owing
                     pendingReturns[msg.sender] = amount;
                     return false;
@@ -160,7 +161,8 @@ to receive their money - contracts cannot activate themselves.
             emit AuctionEnded(highestBidder, highestBid);
 
             // 3. Interaction
-            beneficiary.transfer(highestBid);
+            (bool success, ) = beneficiary.call{value: highestBid}("");
+            require(success);
         }
     }
 
@@ -177,19 +179,19 @@ During the **bidding period**, a bidder does not actually send their bid, but
 only a hashed version of it.  Since it is currently considered practically
 impossible to find two (sufficiently long) values whose hash values are equal,
 the bidder commits to the bid by that.  After the end of the bidding period,
-the bidders have to reveal their bids: They send their values unencrypted and
+the bidders have to reveal their bids: They send their values unencrypted, and
 the contract checks that the hash value is the same as the one provided during
 the bidding period.
 
 Another challenge is how to make the auction **binding and blind** at the same
-time: The only way to prevent the bidder from just not sending the money after
+time: The only way to prevent the bidder from just not sending the Ether after
 they won the auction is to make them send it together with the bid. Since value
 transfers cannot be blinded in Ethereum, anyone can see the value.
 
 The following contract solves this problem by accepting any value that is
 larger than the highest bid. Since this can of course only be checked during
 the reveal phase, some bids might be **invalid**, and this is on purpose (it
-even provides an explicit flag to place invalid bids with high value
+even provides an explicit flag to place invalid bids with high-value
 transfers): Bidders can confuse competition by placing several high or low
 invalid bids.
 
@@ -310,7 +312,8 @@ invalid bids.
                 // the same deposit.
                 bidToCheck.blindedBid = bytes32(0);
             }
-            payable(msg.sender).transfer(refund);
+            (bool success, ) = payable(msg.sender).call{value: refund}("");
+            require(success);
         }
 
         /// Withdraw a bid that was overbid.
@@ -319,11 +322,12 @@ invalid bids.
             if (amount > 0) {
                 // It is important to set this to zero because the recipient
                 // can call this function again as part of the receiving call
-                // before `transfer` returns (see the remark above about
+                // before `call` returns (see the remark above about
                 // conditions -> effects -> interaction).
                 pendingReturns[msg.sender] = 0;
 
-                payable(msg.sender).transfer(amount);
+                (bool success, ) = payable(msg.sender).call{value: amount}("");
+                require(success);
             }
         }
 
@@ -336,7 +340,8 @@ invalid bids.
             if (ended) revert AuctionEndAlreadyCalled();
             emit AuctionEnded(highestBidder, highestBid);
             ended = true;
-            beneficiary.transfer(highestBid);
+            (bool success, ) = beneficiary.call{value: highestBid}("");
+            require(success);
         }
 
         // This is an "internal" function which means that it

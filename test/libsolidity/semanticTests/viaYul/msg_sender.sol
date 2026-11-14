@@ -5,8 +5,5 @@ contract C {
         return x == msg.sender;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // test() -> true

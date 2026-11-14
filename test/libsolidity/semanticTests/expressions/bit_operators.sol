@@ -13,8 +13,5 @@ contract test {
         z = a ^ b;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 3855, 268374015, 268370160

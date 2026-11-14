@@ -2,15 +2,13 @@
   "absolutePath": "a",
   "id": 20,
   "nodeType": "SourceUnit",
-  "nodes":
-  [
+  "nodes": [
     {
       "id": 2,
       "name": "X",
       "nameLocation": "6:1:1",
       "nodeType": "ErrorDefinition",
-      "parameters":
-      {
+      "parameters": {
         "id": 1,
         "nodeType": "ParameterList",
         "parameters": [],
@@ -19,36 +17,33 @@
       "src": "0:10:1"
     },
     {
-      "body":
-      {
+      "body": {
         "id": 8,
         "nodeType": "Block",
-        "src": "24:15:1",
-        "statements":
-        [
+        "src": "29:15:1",
+        "statements": [
           {
-            "errorCall":
-            {
+            "errorCall": {
               "arguments": [],
-              "expression":
-              {
+              "expression": {
                 "id": 5,
                 "name": "X",
                 "nodeType": "Identifier",
                 "overloadedDeclarations": [],
-                "src": "33:1:1",
+                "src": "38:1:1",
                 "typeDescriptions": {}
               },
               "id": 6,
+              "nameLocations": [],
               "names": [],
               "nodeType": "FunctionCall",
-              "src": "33:3:1",
+              "src": "38:3:1",
               "tryCall": false,
               "typeDescriptions": {}
             },
             "id": 7,
             "nodeType": "RevertStatement",
-            "src": "26:10:1"
+            "src": "31:10:1"
           }
         ]
       },
@@ -59,22 +54,20 @@
       "name": "f",
       "nameLocation": "20:1:1",
       "nodeType": "FunctionDefinition",
-      "parameters":
-      {
+      "parameters": {
         "id": 3,
         "nodeType": "ParameterList",
         "parameters": [],
         "src": "21:2:1"
       },
-      "returnParameters":
-      {
+      "returnParameters": {
         "id": 4,
         "nodeType": "ParameterList",
         "parameters": [],
-        "src": "24:0:1"
+        "src": "29:0:1"
       },
-      "src": "11:28:1",
-      "stateMutability": "nonpayable",
+      "src": "11:33:1",
+      "stateMutability": "pure",
       "virtual": false,
       "visibility": "internal"
     },
@@ -85,55 +78,50 @@
       "contractKind": "contract",
       "id": 19,
       "name": "C",
-      "nameLocation": "49:1:1",
+      "nameLocation": "54:1:1",
       "nodeType": "ContractDefinition",
-      "nodes":
-      [
+      "nodes": [
         {
           "id": 11,
           "name": "T",
-          "nameLocation": "63:1:1",
+          "nameLocation": "68:1:1",
           "nodeType": "ErrorDefinition",
-          "parameters":
-          {
+          "parameters": {
             "id": 10,
             "nodeType": "ParameterList",
             "parameters": [],
-            "src": "64:2:1"
+            "src": "69:2:1"
           },
-          "src": "57:10:1"
+          "src": "62:10:1"
         },
         {
-          "body":
-          {
+          "body": {
             "id": 17,
             "nodeType": "Block",
-            "src": "92:8:1",
-            "statements":
-            [
+            "src": "97:8:1",
+            "statements": [
               {
-                "expression":
-                {
+                "expression": {
                   "arguments": [],
-                  "expression":
-                  {
+                  "expression": {
                     "id": 14,
                     "name": "f",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "src": "94:1:1",
+                    "src": "99:1:1",
                     "typeDescriptions": {}
                   },
                   "id": 15,
+                  "nameLocations": [],
                   "names": [],
                   "nodeType": "FunctionCall",
-                  "src": "94:3:1",
+                  "src": "99:3:1",
                   "tryCall": false,
                   "typeDescriptions": {}
                 },
                 "id": 16,
                 "nodeType": "ExpressionStatement",
-                "src": "94:3:1"
+                "src": "99:3:1"
               }
             ]
           },
@@ -142,31 +130,30 @@
           "kind": "function",
           "modifiers": [],
           "name": "h",
-          "nameLocation": "81:1:1",
+          "nameLocation": "86:1:1",
           "nodeType": "FunctionDefinition",
-          "parameters":
-          {
+          "parameters": {
             "id": 12,
             "nodeType": "ParameterList",
             "parameters": [],
-            "src": "82:2:1"
+            "src": "87:2:1"
           },
-          "returnParameters":
-          {
+          "returnParameters": {
             "id": 13,
             "nodeType": "ParameterList",
             "parameters": [],
-            "src": "92:0:1"
+            "src": "97:0:1"
           },
-          "src": "72:28:1",
+          "src": "77:28:1",
           "stateMutability": "nonpayable",
           "virtual": false,
           "visibility": "public"
         }
       ],
-      "src": "40:62:1",
-      "usedErrors": []
+      "src": "45:62:1",
+      "usedErrors": [],
+      "usedEvents": []
     }
   ],
-  "src": "0:103:1"
+  "src": "0:108:1"
 }

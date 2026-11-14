@@ -1,5 +1,5 @@
 pragma abicoder v2;
-// Example from https://github.com/ethereum/solidity/issues/12558
+// Example from https://github.com/argotorg/solidity/issues/12558
 struct S {
     uint x;
 }
@@ -18,7 +18,5 @@ contract C {
         return sMemory;
     }
 }
-// ====
-// compileViaYul: also
 // ----
 // f() -> 0x20, 1, 13

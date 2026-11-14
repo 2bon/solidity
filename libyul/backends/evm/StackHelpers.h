@@ -20,6 +20,7 @@
 
 #include <libyul/backends/evm/ControlFlowGraph.h>
 #include <libyul/Exceptions.h>
+#include <libyul/Utilities.h>
 
 #include <libsolutil/Visitor.h>
 
@@ -33,29 +34,28 @@
 namespace solidity::yul
 {
 
-inline std::string stackSlotToString(StackSlot const& _slot)
+inline std::string stackSlotToString(StackSlot const& _slot, Dialect const& _dialect)
 {
 	return std::visit(util::GenericVisitor{
-		[](FunctionCallReturnLabelSlot const& _ret) -> std::string { return "RET[" + _ret.call.get().functionName.name.str() + "]"; },
+		[&](FunctionCallReturnLabelSlot const& _ret) -> std::string { return "RET[" + std::string(resolveFunctionName(_ret.call.get().functionName, _dialect)) + "]"; },
 		[](FunctionReturnLabelSlot const&) -> std::string { return "RET"; },
 		[](VariableSlot const& _var) { return _var.variable.get().name.str(); },
 		[](LiteralSlot const& _lit) { return toCompactHexWithPrefix(_lit.value); },
-		[](TemporarySlot const& _tmp) -> std::string { return "TMP[" + _tmp.call.get().functionName.name.str() + ", " + std::to_string(_tmp.index) + "]"; },
+		[&](TemporarySlot const& _tmp) -> std::string { return "TMP[" + std::string(resolveFunctionName(_tmp.call.get().functionName, _dialect)) + ", " + std::to_string(_tmp.index) + "]"; },
 		[](JunkSlot const&) -> std::string { return "JUNK"; }
 	}, _slot);
 }
 
-inline std::string stackToString(Stack const& _stack)
+inline std::string stackToString(Stack const& _stack, Dialect const& _dialect)
 {
 	std::string result("[ ");
 	for (auto const& slot: _stack)
-		result += stackSlotToString(slot) + ' ';
+		result += stackSlotToString(slot, _dialect) + ' ';
 	result += ']';
 	return result;
 }
 
 
-// Abstraction of stack shuffling operations. Can be defined as actual concept once we switch to C++20.
 // Used as an interface for the stack shuffler below.
 // The shuffle operation class is expected to internally keep track of a current stack layout (the "source layout")
 // that the shuffler is supposed to shuffle to a fixed target stack layout.
@@ -64,7 +64,6 @@ inline std::string stackToString(Stack const& _stack)
 // in the interface below.
 // Based on that information the shuffler decides which is the next optimal operation to perform on the stack
 // and calls the corresponding entry point in the shuffling operations (swap, pushOrDupTarget or pop).
-/*
 template<typename ShuffleOperations>
 concept ShuffleOperationConcept = requires(ShuffleOperations ops, size_t sourceOffset, size_t targetOffset, size_t depth) {
 	// Returns true, iff the current slot at sourceOffset in source layout is a suitable slot at targetOffset.
@@ -97,11 +96,13 @@ concept ShuffleOperationConcept = requires(ShuffleOperations ops, size_t sourceO
 	{ ops.pop() };
 	// Dups or pushes the slot that is supposed to end up at the given target offset.
 	{ ops.pushOrDupTarget(targetOffset) };
+	// Maximum reachable depth with swaps and dups.
+	{ ops.reachableStackDepth } -> std::convertible_to<size_t>;
 };
-*/
+
 /// Helper class that can perform shuffling of a source stack layout to a target stack layout via
 /// abstracted shuffle operations.
-template</*ShuffleOperationConcept*/ typename ShuffleOperations>
+template<ShuffleOperationConcept ShuffleOperations>
 class Shuffler
 {
 public:
@@ -127,10 +128,10 @@ private:
 	static bool dupDeepSlotIfRequired(ShuffleOperations& _ops)
 	{
 		// Check if the stack is large enough for anything to potentially become unreachable.
-		if (_ops.sourceSize() < 15)
+		if (_ops.sourceSize() < (_ops.reachableStackDepth - 1))
 			return false;
 		// Check whether any deep slot might still be needed later (i.e. we still need to reach it with a DUP or SWAP).
-		for (size_t sourceOffset: ranges::views::iota(0u, _ops.sourceSize() - 15))
+		for (size_t sourceOffset: ranges::views::iota(0u, _ops.sourceSize() - (_ops.reachableStackDepth - 1)))
 		{
 			// This slot needs to be moved.
 			if (!_ops.isCompatible(sourceOffset, sourceOffset))
@@ -185,13 +186,13 @@ private:
 	static bool bringUpTargetSlot(ShuffleOperations& _ops, size_t _targetOffset)
 	{
 		std::list<size_t> toVisit{_targetOffset};
-		std::set<size_t> visited;
+		// mark on enqueue
+		std::set<size_t> visited{_targetOffset};
 
 		while (!toVisit.empty())
 		{
 			auto offset = *toVisit.begin();
 			toVisit.erase(toVisit.begin());
-			visited.emplace(offset);
 			if (_ops.targetMultiplicity(offset) > 0)
 			{
 				_ops.pushOrDupTarget(offset);
@@ -203,11 +204,12 @@ private:
 					!_ops.isCompatible(nextOffset, nextOffset) &&
 					_ops.isCompatible(nextOffset, offset)
 				)
-					if (!visited.count(nextOffset))
+					if (visited.insert(nextOffset).second)  // insert returns false if already present
 						toVisit.emplace_back(nextOffset);
 		}
 		return false;
 	}
+
 	/// Performs a single stack operation, transforming the source layout closer to the target layout.
 	template<typename... Args>
 	static bool shuffleStep(Args&&... args)
@@ -255,10 +257,10 @@ private:
 				)
 				{
 					// We cannot swap that deep.
-					if (ops.sourceSize() - offset - 1 > 16)
+					if (ops.sourceSize() - offset - 1 > ops.reachableStackDepth)
 					{
 						// If there is a reachable slot to be removed, park the current top there.
-						for (size_t swapDepth: ranges::views::iota(1u, 17u) | ranges::views::reverse)
+						for (size_t swapDepth: ranges::views::iota(1u, ops.reachableStackDepth + 1u) | ranges::views::reverse)
 							if (ops.sourceMultiplicity(ops.sourceSize() - 1 - swapDepth) < 0)
 							{
 								ops.swap(swapDepth);
@@ -326,7 +328,7 @@ private:
 			yulAssert(ops.sourceMultiplicity(i) == 0 && (ops.targetIsArbitrary(i) || ops.targetMultiplicity(i) == 0), "");
 		yulAssert(ops.isCompatible(sourceTop, sourceTop), "");
 
-		auto swappableOffsets = ranges::views::iota(size > 17 ? size - 17 : 0u, size);
+		auto swappableOffsets = ranges::views::iota(size > ops.reachableStackDepth + 1u ? size - (ops.reachableStackDepth + 1u) : 0u, size);
 
 		// If we find a lower slot that is out of position, but also compatible with the top, swap that up.
 		for (size_t offset: swappableOffsets)
@@ -371,9 +373,56 @@ private:
 				return true;
 			}
 		yulAssert(false, "");
+
+		// FIXME: Workaround for spurious GCC 12.1 warning (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105794)
+		throw std::exception();
 	}
 };
 
+/// A simple optimized map for mapping StackSlots to ints.
+class Multiplicity
+{
+public:
+	int& operator[](StackSlot const& _slot)
+	{
+		if (auto* p = std::get_if<FunctionCallReturnLabelSlot>(&_slot))
+			return m_functionCallReturnLabelSlotMultiplicity[*p];
+		if (std::holds_alternative<FunctionReturnLabelSlot>(_slot))
+			return m_functionReturnLabelSlotMultiplicity;
+		if (auto* p = std::get_if<VariableSlot>(&_slot))
+			return m_variableSlotMultiplicity[*p];
+		if (auto* p = std::get_if<LiteralSlot>(&_slot))
+			return m_literalSlotMultiplicity[*p];
+		if (auto* p = std::get_if<TemporarySlot>(&_slot))
+			return m_temporarySlotMultiplicity[*p];
+		yulAssert(std::holds_alternative<JunkSlot>(_slot));
+		return m_junkSlotMultiplicity;
+	}
+
+	int at(StackSlot const& _slot) const
+	{
+		if (auto* p = std::get_if<FunctionCallReturnLabelSlot>(&_slot))
+			return m_functionCallReturnLabelSlotMultiplicity.at(*p);
+		if (std::holds_alternative<FunctionReturnLabelSlot>(_slot))
+			return m_functionReturnLabelSlotMultiplicity;
+		if (auto* p = std::get_if<VariableSlot>(&_slot))
+			return m_variableSlotMultiplicity.at(*p);
+		if (auto* p = std::get_if<LiteralSlot>(&_slot))
+			return m_literalSlotMultiplicity.at(*p);
+		if (auto* p = std::get_if<TemporarySlot>(&_slot))
+			return m_temporarySlotMultiplicity.at(*p);
+		yulAssert(std::holds_alternative<JunkSlot>(_slot));
+		return m_junkSlotMultiplicity;
+	}
+
+private:
+	std::map<FunctionCallReturnLabelSlot, int> m_functionCallReturnLabelSlotMultiplicity;
+	int m_functionReturnLabelSlotMultiplicity = 0;
+	std::map<VariableSlot, int> m_variableSlotMultiplicity;
+	std::map<LiteralSlot, int> m_literalSlotMultiplicity;
+	std::map<TemporarySlot, int> m_temporarySlotMultiplicity;
+	int m_junkSlotMultiplicity = 0;
+};
 
 /// Transforms @a _currentStack to @a _targetStack, invoking the provided shuffling operations.
 /// Modifies @a _currentStack itself after each invocation of the shuffling operations.
@@ -383,7 +432,14 @@ private:
 /// its argument to the stack top.
 /// @a _pop is a function with signature void() that is called when the top most slot is popped.
 template<typename Swap, typename PushOrDup, typename Pop>
-void createStackLayout(Stack& _currentStack, Stack const& _targetStack, Swap _swap, PushOrDup _pushOrDup, Pop _pop)
+void createStackLayout(
+	Stack& _currentStack,
+	Stack const& _targetStack,
+	Swap _swap,
+	PushOrDup _pushOrDup,
+	Pop _pop,
+	size_t _reachableStackDepth
+)
 {
 	struct ShuffleOperations
 	{
@@ -392,19 +448,22 @@ void createStackLayout(Stack& _currentStack, Stack const& _targetStack, Swap _sw
 		Swap swapCallback;
 		PushOrDup pushOrDupCallback;
 		Pop popCallback;
-		std::map<StackSlot, int> multiplicity;
+		Multiplicity multiplicity;
+		size_t reachableStackDepth;
 		ShuffleOperations(
 			Stack& _currentStack,
 			Stack const& _targetStack,
 			Swap _swap,
 			PushOrDup _pushOrDup,
-			Pop _pop
+			Pop _pop,
+			size_t _reachableStackDepth
 		):
 			currentStack(_currentStack),
 			targetStack(_targetStack),
 			swapCallback(_swap),
 			pushOrDupCallback(_pushOrDup),
-			popCallback(_pop)
+			popCallback(_pop),
+			reachableStackDepth(_reachableStackDepth)
 		{
 			for (auto const& slot: currentStack)
 				--multiplicity[slot];
@@ -451,7 +510,7 @@ void createStackLayout(Stack& _currentStack, Stack const& _targetStack, Swap _sw
 		}
 	};
 
-	Shuffler<ShuffleOperations>::shuffle(_currentStack, _targetStack, _swap, _pushOrDup, _pop);
+	Shuffler<ShuffleOperations>::shuffle(_currentStack, _targetStack, _swap, _pushOrDup, _pop, _reachableStackDepth);
 
 	yulAssert(_currentStack.size() == _targetStack.size(), "");
 	for (auto&& [current, target]: ranges::zip_view(_currentStack, _targetStack))

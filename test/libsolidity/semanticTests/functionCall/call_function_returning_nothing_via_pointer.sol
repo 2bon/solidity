@@ -11,10 +11,6 @@ contract test {
         return flag;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> true
 // flag() -> true

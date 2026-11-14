@@ -13,14 +13,13 @@ contract c {
     }
     function clear() public { delete data; }
 }
-// ====
-// compileViaYul: also
 // ----
 // storageEmpty -> 1
 // fill() -> 8
-// gas irOptimized: 122534
-// gas legacy: 121756
-// gas legacyOptimized: 120687
+// gas irOptimized: 122982
+// gas legacy: 121602
+// gas legacyOptimized: 120589
+// gas ssaCFGOptimized: 123141
 // storageEmpty -> 0
 // clear() ->
 // storageEmpty -> 1

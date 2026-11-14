@@ -6,9 +6,6 @@ contract C {
         return x**y;
     }
 }
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // f(uint8,uint8): 2, 7 -> 0x80
 // f(uint8,uint8): 2, 8 -> FAILURE, hex"4e487b71", 0x11

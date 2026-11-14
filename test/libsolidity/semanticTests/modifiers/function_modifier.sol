@@ -7,10 +7,6 @@ contract C {
         if (msg.value > 0) _;
     }
 }
-
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // getOne() -> 0
 // getOne(), 1 wei -> 1

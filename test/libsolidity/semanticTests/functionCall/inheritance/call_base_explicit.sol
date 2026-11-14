@@ -9,8 +9,5 @@ contract Child is Base {
 		return Base.f(n);
 	}
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // g(uint256): 4 -> 8

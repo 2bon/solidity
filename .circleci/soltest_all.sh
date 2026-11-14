@@ -31,9 +31,25 @@ REPODIR="$(realpath "$(dirname "$0")"/..)"
 # shellcheck source=scripts/common.sh
 source "${REPODIR}/scripts/common.sh"
 
-EVM_VALUES=(homestead byzantium constantinople petersburg istanbul berlin london)
-DEFAULT_EVM=london
-[[ " ${EVM_VALUES[*]} " =~ $DEFAULT_EVM ]]
+DEFAULT_EVM_VALUES=(
+    homestead
+    constantinople
+    istanbul
+    berlin
+    london
+    paris
+    shanghai
+    cancun
+    osaka
+    amsterdam
+    @future
+)
+
+# Deserialize the EVM_VALUES array if it was provided as argument or
+# set EVM_VALUES to the default values.
+IFS=" " read -ra EVM_VALUES <<< "${1:-${DEFAULT_EVM_VALUES[@]}}"
+
+DEFAULT_EVM=osaka
 OPTIMIZE_VALUES=(0 1)
 
 # Run for ABI encoder v1, without SMTChecker tests.
@@ -50,9 +66,6 @@ for OPTIMIZE in "${OPTIMIZE_VALUES[@]}"
 do
     for EVM in "${EVM_VALUES[@]}"
     do
-        # run tests against hera ewasm evmc vm, only if OPTIMIZE == 0 and evm version is byzantium
-        EWASM_ARGS=""
-        [ "${EVM}" = "byzantium" ] && [ "${OPTIMIZE}" = "0" ] && EWASM_ARGS="--ewasm"
         ENFORCE_GAS_ARGS=""
         [ "${EVM}" = "${DEFAULT_EVM}" ] && ENFORCE_GAS_ARGS="--enforce-gas-cost"
         # Run SMTChecker tests only when OPTIMIZE == 0
@@ -61,7 +74,7 @@ do
 
         EVM="$EVM" \
         OPTIMIZE="$OPTIMIZE" \
-        SOLTEST_FLAGS="$SOLTEST_FLAGS $ENFORCE_GAS_ARGS $EWASM_ARGS" \
+        SOLTEST_FLAGS="$SOLTEST_FLAGS $ENFORCE_GAS_ARGS" \
         BOOST_TEST_ARGS="-t !@nooptions $DISABLE_SMTCHECKER" \
         INDEX_SHIFT="$INDEX_SHIFT" \
         "${REPODIR}/.circleci/soltest.sh"

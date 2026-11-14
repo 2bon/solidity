@@ -20,11 +20,11 @@ contract B {
         return i.f(new uint256[](2));
     }
 }
-
-// ====
-// compileViaYul: also
 // ----
 // g() -> 42
-// gas irOptimized: 111770
-// gas legacy: 185053
-// gas legacyOptimized: 114598
+// gas irOptimized: 54822
+// gas irOptimized code: 41800
+// gas legacy: 56839
+// gas legacy code: 123600
+// gas legacyOptimized: 55001
+// gas legacyOptimized code: 60600

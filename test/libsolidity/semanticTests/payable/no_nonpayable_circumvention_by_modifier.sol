@@ -9,9 +9,6 @@ contract C {
         return msg.value;
     }
 }
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // f(), 27 wei -> FAILURE
 // balance -> 0

@@ -15,10 +15,7 @@ contract C {
         new B();
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // constructor() ->
-// gas irOptimized: 104337
+// gas irOptimized: 56579
+// gas irOptimized code: 39000

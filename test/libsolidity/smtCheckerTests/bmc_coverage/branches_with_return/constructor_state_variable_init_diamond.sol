@@ -60,6 +60,7 @@ contract D4 is B, C {
 // ====
 // SMTEngine: bmc
 // ----
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.
 // Warning 4661: (337-351): BMC: Assertion violation happens here.
 // Warning 4661: (370-385): BMC: Assertion violation happens here.
 // Warning 4661: (460-474): BMC: Assertion violation happens here.
@@ -68,3 +69,4 @@ contract D4 is B, C {
 // Warning 4661: (736-751): BMC: Assertion violation happens here.
 // Warning 4661: (827-841): BMC: Assertion violation happens here.
 // Warning 4661: (860-874): BMC: Assertion violation happens here.
+// Info 6002: BMC: 4 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.

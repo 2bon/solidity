@@ -12,9 +12,6 @@ contract collatz {
         return 3 * x + 1;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // run(uint256): 0 -> 0
 // run(uint256): 1 -> 1

@@ -7,10 +7,6 @@ contract C {
         r[2] = 3;
     }
 }
-
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // f(uint256): 9 -> 0x00, 0x00, 0x00, 0x00, 0x00
 // f(uint256): 10 -> 0x00, 0x00, 3, 0x00, 0x00

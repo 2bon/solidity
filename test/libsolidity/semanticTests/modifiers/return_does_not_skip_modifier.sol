@@ -9,10 +9,6 @@ contract C {
         return 2;
     }
 }
-
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // x() -> 0
 // f() -> 2

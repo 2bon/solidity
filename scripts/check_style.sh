@@ -5,9 +5,11 @@ set -eu
 ERROR_LOG="$(mktemp -t check_style_XXXXXX.log)"
 
 EXCLUDE_FILES=(
+    # The line below is left unquoted to allow the shell globbing path expansion
+    deps/*
+    test/cmdlineTests/*/{err,output}
     "libsolutil/picosha2.h"
     "test/cmdlineTests/strict_asm_only_cr/input.yul"
-    "test/cmdlineTests/strict_asm_only_cr/err"
     "test/libsolutil/UTF8.cpp"
     "test/libsolidity/syntaxTests/license/license_cr_endings.sol"
     "test/libsolidity/syntaxTests/license/license_crlf_endings.sol"
@@ -23,45 +25,64 @@ EXCLUDE_FILES_JOINED=${EXCLUDE_FILES_JOINED%??}
 REPO_ROOT="$(dirname "$0")"/..
 cd "$REPO_ROOT" || exit 1
 
+function preparedGrep
+{
+    git grep -nIE "$1" -- '*.h' '*.cpp' ':!test/' | grep -v "${EXCLUDE_FILES_JOINED}"
+    return $?
+}
+
+function addPrefix
+{
+    sed "s/^/[$1] /"
+}
+
 WHITESPACE=$(git grep -n -I -E "^.*[[:space:]]+$" |
-    grep -v "test/libsolidity/ASTJSON\|test/libsolidity/ASTRecoveryTests\|test/compilationTests/zeppelin/LICENSE\|${EXCLUDE_FILES_JOINED}" || true
+    grep -v "test/libsolidity/ASTJSON\|test/compilationTests/zeppelin/LICENSE\|${EXCLUDE_FILES_JOINED}" || true
 )
 
 if [[ "$WHITESPACE" != "" ]]
 then
     echo "Error: Trailing whitespace found:" | tee -a "$ERROR_LOG"
-    echo "$WHITESPACE" | tee -a "$ERROR_LOG"
-    scripts/ci/post_style_errors_on_github.sh "$ERROR_LOG"
-    exit 1
+    echo "$WHITESPACE" | addPrefix "Trailing whitespace" | tee -a "$ERROR_LOG"
 fi
-
-function preparedGrep
-{
-    git grep -nIE "$1" -- '*.h' '*.cpp' | grep -v "${EXCLUDE_FILES_JOINED}"
-    return $?
-}
 
 FORMATERROR=$(
 (
-    preparedGrep "#include \"" | grep -E -v -e "license.h" -e "BuildInfo.h"  # Use include with <> characters
-    preparedGrep "\<(if|for|while|switch)\(" # no space after "if", "for", "while" or "switch"
-    preparedGrep "\<for\>\s*\([^=]*\>\s:\s.*\)" # no space before range based for-loop
-    preparedGrep "\<if\>\s*\(.*\)\s*\{\s*$" # "{\n" on same line as "if"
-    preparedGrep "namespace .*\{"
-    preparedGrep "[,\(<]\s*const " # const on left side of type
-    preparedGrep "^\s*(static)?\s*const " # const on left side of type (beginning of line)
-    preparedGrep "^ [^*]|[^*] 	|	 [^*]" # uses spaces for indentation or mixes spaces and tabs
-    preparedGrep "[a-zA-Z0-9_]\s*[&][a-zA-Z_]" | grep -E -v "return [&]" # right-aligned reference ampersand (needs to exclude return)
-    # right-aligned reference pointer star (needs to exclude return and comments)
-    preparedGrep "[a-zA-Z0-9_]\s*[*][a-zA-Z_]" | grep -E -v -e "return [*]" -e "^* [*]" -e "^*//.*"
-) | grep -E -v -e "^[a-zA-Z\./]*:[0-9]*:\s*\/(\/|\*)" -e "^test/" || true
+    preparedGrep "#include \"" | grep -E -v -e "license.h" -e "BuildInfo.h" | addPrefix "Use angle brackets for includes"
+    preparedGrep "\<(if|for|while|switch)\(" | addPrefix "Missing space after keyword"
+    preparedGrep "\<for\>[[:space:]]*\([^=]*\>[[:space:]]:[[:space:]].*\)" | addPrefix "Missing space before range-based for colon"
+    preparedGrep "\<if\>[[:space:]]*\(.*\)[[:space:]]*\{[[:space:]]*$" | addPrefix "Opening brace on same line as if"
+    preparedGrep "namespace .*\{" | addPrefix "Missing space before opening brace in namespace"
+    preparedGrep "[,\(<][[:space:]]*const " | addPrefix "const should be on the right side of the type"
+    preparedGrep "^[[:space:]]*(static)?[[:space:]]*const " | addPrefix "const should be on the right side of the type"
+    preparedGrep "^ [^*]|[^*] 	|	 [^*]" | addPrefix "Use tabs for indentation"
+    preparedGrep "[a-zA-Z0-9_][[:space:]]*[&][a-zA-Z_]" | grep -E -v "return [&]" | addPrefix "Reference ampersand should be left-aligned"
+    preparedGrep "[a-zA-Z0-9_][[:space:]]*[*][a-zA-Z_]" | grep -E -v -e "return [*]" -e ":[0-9]+:[[:space:]]*\*[[:space:]]" -e "//" | addPrefix "Pointer star should be left-aligned"
+    preparedGrep "move\(.+\)" | grep -v "std::move" | grep -E "[^a-z]move" | addPrefix "Use std::move"
+    preparedGrep "forward\(.+\)" | grep -v "std::forward" | grep -E "[^a-z]forward" | addPrefix "Use std::forward"
+) | grep -E -v -e "^\[[^]]*\] [a-zA-Z./]*:[0-9]*:[[:space:]]*/[/*]" || true
 )
 
-if [[ "$FORMATERROR" != "" ]]
+# Special error handling for `using namespace std;` exclusion, since said statement can be present in the test directory
+# and its subdirectories, but is excluded in the above ruleset. In order to have consistent codestyle with regards to
+# std namespace usage, test directory must also be covered.
+FORMATSTDERROR=$(
+(
+    git grep -nIE "using namespace std;" -- '*.h' '*.cpp' | addPrefix "Do not use 'using namespace std'"
+) || true
+)
+
+# Merge errors into single string
+FORMATEDERRORS=$(printf '%s\n' "$FORMATERROR" "$FORMATSTDERROR" | grep -v '^$' || true)
+
+if [[ "$FORMATEDERRORS" != "" ]]
 then
     echo "Coding style error:" | tee -a "$ERROR_LOG"
-    echo "$FORMATERROR" | tee -a "$ERROR_LOG"
-    scripts/ci/post_style_errors_on_github.sh "$ERROR_LOG"
+    echo "$FORMATEDERRORS" | tee -a "$ERROR_LOG"
+fi
+
+if [[ -s "$ERROR_LOG" ]]
+then
     exit 1
 fi
 )

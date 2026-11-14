@@ -44,9 +44,5 @@ contract C is A {
         data |= 0x4000;
     }
 }
-
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // getData() -> 0x4300

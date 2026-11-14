@@ -20,4 +20,5 @@ contract C is B {
 // SMTEngine: all
 // SMTSolvers: z3
 // ----
-// Info 1180: Contract invariant(s) for :A:\n(x <= 0)\nContract invariant(s) for :C:\n(x <= 0)\nContract invariant(s) for :B:\n(x <= 0)\n
+// Info 1391: CHC: 3 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

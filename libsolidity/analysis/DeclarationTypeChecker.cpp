@@ -25,10 +25,10 @@
 #include <liblangutil/ErrorReporter.h>
 
 #include <libsolutil/Algorithms.h>
+#include <libsolutil/Visitor.h>
 
 #include <range/v3/view/transform.hpp>
 
-using namespace std;
 using namespace solidity::langutil;
 using namespace solidity::frontend;
 
@@ -189,7 +189,7 @@ void DeclarationTypeChecker::endVisit(UserDefinedTypeName const& _typeName)
 		m_errorReporter.fatalTypeError(
 			5172_error,
 			_typeName.location(),
-			"Name has to refer to a struct, enum or contract."
+			"Name has to refer to a user-defined type."
 		);
 	}
 }
@@ -266,14 +266,59 @@ void DeclarationTypeChecker::endVisit(Mapping const& _mapping)
 		solAssert(dynamic_cast<ElementaryTypeName const*>(&_mapping.keyType()), "");
 
 	Type const* keyType = _mapping.keyType().annotation().type;
+	ASTString keyName = _mapping.keyName();
+
 	Type const* valueType = _mapping.valueType().annotation().type;
+	ASTString valueName = _mapping.valueName();
 
 	// Convert key type to memory.
 	keyType = TypeProvider::withLocationIfReference(DataLocation::Memory, keyType);
 
 	// Convert value type to storage reference.
 	valueType = TypeProvider::withLocationIfReference(DataLocation::Storage, valueType);
-	_mapping.annotation().type = TypeProvider::mapping(keyType, valueType);
+	_mapping.annotation().type = TypeProvider::mapping(keyType, keyName, valueType, valueName);
+
+	// Check if parameter names are conflicting.
+	if (!keyName.empty())
+	{
+		auto childMappingType = dynamic_cast<MappingType const*>(valueType);
+		ASTString currentValueName = valueName;
+		bool loop = true;
+		while (loop)
+		{
+			bool isError = false;
+			// Value type is a mapping.
+			if (childMappingType)
+			{
+				// Compare top mapping's key name with child mapping's key name.
+				ASTString childKeyName = childMappingType->keyName();
+				if (keyName == childKeyName)
+					isError = true;
+
+				auto valueType = childMappingType->valueType();
+				currentValueName = childMappingType->valueName();
+				childMappingType = dynamic_cast<MappingType const*>(valueType);
+			}
+			else
+			{
+				// Compare top mapping's key name with the value name.
+				if (keyName == currentValueName)
+					isError = true;
+
+				loop = false; // We arrived at the end of mapping recursion.
+			}
+
+			// Report error.
+			if (isError)
+			{
+				m_errorReporter.declarationError(
+					1809_error,
+					_mapping.location(),
+					"Conflicting parameter name \"" + keyName + "\" in mapping."
+				);
+			}
+		}
+	}
 }
 
 void DeclarationTypeChecker::endVisit(ArrayTypeName const& _typeName)
@@ -284,19 +329,21 @@ void DeclarationTypeChecker::endVisit(ArrayTypeName const& _typeName)
 	Type const* baseType = _typeName.baseType().annotation().type;
 	if (!baseType)
 	{
-		solAssert(!m_errorReporter.errors().empty(), "");
+		solAssert(m_errorReporter.hasErrors(), "");
 		return;
 	}
 
 	if (Expression const* length = _typeName.length())
 	{
-		optional<rational> lengthValue;
+		std::optional<rational> lengthValue;
 		if (length->annotation().type && length->annotation().type->category() == Type::Category::RationalNumber)
 			lengthValue = dynamic_cast<RationalNumberType const&>(*length->annotation().type).value();
-		else if (optional<ConstantEvaluator::TypedRational> value = ConstantEvaluator::evaluate(m_errorReporter, *length))
-			lengthValue = value->value;
+		else if (ConstantEvaluator::TypedValue value = ConstantEvaluator::evaluate(m_errorReporter, *length);
+			value.isRational()
+		)
+			lengthValue = value.asRational();
 
-		if (!lengthValue || lengthValue > TypeProvider::uint256()->max())
+		if (!lengthValue)
 			m_errorReporter.typeError(
 				5462_error,
 				length->location(),
@@ -308,6 +355,12 @@ void DeclarationTypeChecker::endVisit(ArrayTypeName const& _typeName)
 			m_errorReporter.typeError(3208_error, length->location(), "Array with fractional length specified.");
 		else if (*lengthValue < 0)
 			m_errorReporter.typeError(3658_error, length->location(), "Array with negative length specified.");
+		else if (lengthValue > TypeProvider::uint256()->max())
+			m_errorReporter.typeError(
+				1847_error,
+				length->location(),
+				"Array length too large, maximum is 2**256 - 1."
+			);
 
 		_typeName.annotation().type = TypeProvider::array(
 			DataLocation::Storage,
@@ -347,22 +400,30 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 	Location varLoc = _variable.referenceLocation();
 	DataLocation typeLoc = DataLocation::Memory;
 
-	set<Location> allowedDataLocations = _variable.allowedDataLocations();
+	if (varLoc == VariableDeclaration::Location::Transient && !m_evmVersion.supportsTransientStorage())
+		m_errorReporter.declarationError(
+			7985_error,
+			_variable.location(),
+			"Transient storage is not supported by EVM versions older than cancun."
+		);
+
+	std::set<Location> allowedDataLocations = _variable.allowedDataLocations();
 	if (!allowedDataLocations.count(varLoc))
 	{
-		auto locationToString = [](VariableDeclaration::Location _location) -> string
+		auto locationToString = [](VariableDeclaration::Location _location) -> std::string
 		{
 			switch (_location)
 			{
 				case Location::Memory: return "\"memory\"";
 				case Location::Storage: return "\"storage\"";
+				case Location::Transient: return "\"transient\"";
 				case Location::CallData: return "\"calldata\"";
 				case Location::Unspecified: return "none";
 			}
 			return {};
 		};
 
-		string errorString;
+		std::string errorString;
 		if (!_variable.hasReferenceOrMappingType())
 			errorString = "Data location can only be specified for array, struct or mapping types";
 		else
@@ -378,9 +439,9 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 			else if (_variable.isCallableOrCatchParameter())
 				errorString +=
 					" for " +
-					string(_variable.isReturnParameter() ? "return " : "") +
+					std::string(_variable.isReturnParameter() ? "return " : "") +
 					"parameter in" +
-					string(_variable.isExternalCallableParameter() ? " external" : "") +
+					std::string(_variable.isExternalCallableParameter() ? " external" : "") +
 					" function";
 			else
 				errorString += " for variable";
@@ -405,8 +466,32 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 	}
 	else if (_variable.isStateVariable())
 	{
-		solAssert(varLoc == Location::Unspecified, "");
-		typeLoc = (_variable.isConstant() || _variable.immutable()) ? DataLocation::Memory : DataLocation::Storage;
+		switch (varLoc)
+		{
+			case Location::Unspecified:
+				typeLoc = (_variable.isConstant() || _variable.immutable()) ? DataLocation::Memory : DataLocation::Storage;
+				break;
+			case Location::Transient:
+				if (_variable.isConstant() || _variable.immutable())
+					m_errorReporter.declarationError(
+						2197_error,
+						_variable.location(),
+						"Transient cannot be used as data location for constant or immutable variables."
+					);
+
+				if (_variable.value())
+					m_errorReporter.declarationError(
+						9825_error,
+						_variable.location(),
+						"Initialization of transient storage state variables is not supported."
+					);
+
+				typeLoc = DataLocation::Transient;
+				break;
+			default:
+				solAssert(false);
+				break;
+		}
 	}
 	else if (
 		dynamic_cast<StructDefinition const*>(_variable.scope()) ||
@@ -425,6 +510,9 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 				break;
 			case Location::CallData:
 				typeLoc = DataLocation::CallData;
+				break;
+			case Location::Transient:
+				solUnimplemented("Transient data location cannot be used in this kind of variable or parameter declaration.");
 				break;
 			case Location::Unspecified:
 				solAssert(!_variable.hasReferenceOrMappingType(), "Data location not properly set.");
@@ -446,17 +534,47 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 			m_errorReporter.fatalTypeError(9259_error, _variable.location(), "Only constants of value type and byte array type are implemented.");
 	}
 
+	if (!type->isValueType())
+		solUnimplementedAssert(typeLoc != DataLocation::Transient, "Transient data location is only supported for value types.");
+
 	_variable.annotation().type = type;
 }
 
 bool DeclarationTypeChecker::visit(UsingForDirective const& _usingFor)
 {
-	ContractDefinition const* library = dynamic_cast<ContractDefinition const*>(
-		_usingFor.libraryName().annotation().referencedDeclaration
-	);
+	if (_usingFor.usesBraces())
+	{
+		for (ASTPointer<IdentifierPath> const& function: _usingFor.functionsOrLibrary())
+			if (auto functionDefinition = dynamic_cast<FunctionDefinition const*>(function->annotation().referencedDeclaration))
+			{
+				if (!functionDefinition->isFree() && !(
+					dynamic_cast<ContractDefinition const*>(functionDefinition->scope()) &&
+					dynamic_cast<ContractDefinition const*>(functionDefinition->scope())->isLibrary()
+				))
+					m_errorReporter.typeError(
+						4167_error,
+						function->location(),
+						"Only file-level functions and library functions can be attached to a type in a \"using\" statement"
+					);
+			}
+			else
+				m_errorReporter.fatalTypeError(8187_error, function->location(), "Expected function name." );
+	}
+	else
+	{
+		ContractDefinition const* library = dynamic_cast<ContractDefinition const*>(
+			_usingFor.functionsOrLibrary().front()->annotation().referencedDeclaration
+		);
+		if (!library || !library->isLibrary())
+			m_errorReporter.fatalTypeError(
+				4357_error,
+				_usingFor.functionsOrLibrary().front()->location(),
+				"Library name expected. If you want to attach a function, use '{...}'."
+			);
+	}
 
-	if (!library || !library->isLibrary())
-		m_errorReporter.fatalTypeError(4357_error, _usingFor.libraryName().location(), "Library name expected.");
+	// We do not visit _usingFor.functions() because it will lead to an error since
+	// library names cannot be mentioned stand-alone.
 
 	if (_usingFor.typeName())
 		_usingFor.typeName()->accept(*this);

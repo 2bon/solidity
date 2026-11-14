@@ -25,9 +25,12 @@
 
 #include <libyul/ASTForward.h>
 
+#include <libevmasm/SubAssemblyID.h>
+
 #include <libsolutil/Common.h>
 #include <libsolutil/CommonData.h>
 #include <libsolutil/Numeric.h>
+#include <liblangutil/EVMVersion.h>
 
 #include <functional>
 #include <memory>
@@ -54,7 +57,9 @@ class AbstractAssembly
 {
 public:
 	using LabelID = size_t;
-	using SubID = size_t;
+	using SubID = evmasm::SubAssemblyID;
+	using ContainerID = uint8_t;
+	using FunctionID = uint16_t;
 	enum class JumpType { Ordinary, IntoFunction, OutOfFunction };
 
 	virtual ~AbstractAssembly() = default;
@@ -98,7 +103,8 @@ public:
 	/// Append the assembled size as a constant.
 	virtual void appendAssemblySize() = 0;
 	/// Creates a new sub-assembly, which can be referenced using dataSize and dataOffset.
-	virtual std::pair<std::shared_ptr<AbstractAssembly>, SubID> createSubAssembly(std::string _name = "") = 0;
+	virtual std::pair<std::shared_ptr<AbstractAssembly>, SubID> createSubAssembly(bool _creation, std::string _name = "") = 0;
+
 	/// Appends the offset of the given sub-assembly or data.
 	virtual void appendDataOffset(std::vector<SubID> const& _subPath) = 0;
 	/// Appends the size of the given sub-assembly or data.
@@ -116,6 +122,9 @@ public:
 
 	/// Mark this assembly as invalid. Any attempt to request bytecode from it should throw.
 	virtual void markAsInvalid() = 0;
+
+	/// @returns the EVM version the assembly targets.
+	virtual langutil::EVMVersion evmVersion() const = 0;
 };
 
 enum class IdentifierContext { LValue, RValue, VariableDeclaration, NonExternal };

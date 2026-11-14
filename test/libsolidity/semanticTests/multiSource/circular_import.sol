@@ -9,8 +9,5 @@ contract C {
     return f() - g();
   }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // foo() -> 1

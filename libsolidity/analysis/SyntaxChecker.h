@@ -45,9 +45,12 @@ class SyntaxChecker: private ASTConstVisitor
 {
 public:
 	/// @param _errorReporter provides the error logging functionality.
-	SyntaxChecker(langutil::ErrorReporter& _errorReporter, bool _useYulOptimizer):
+	/// @param _useYulOptimizer indicates whether Yul optimizer is enabled.
+	/// @param _experimental indicates whether the experimental mode is enabled.
+	SyntaxChecker(langutil::ErrorReporter& _errorReporter, bool _useYulOptimizer, bool _experimental):
 		m_errorReporter(_errorReporter),
-		m_useYulOptimizer(_useYulOptimizer)
+		m_useYulOptimizer(_useYulOptimizer),
+		m_experimental(_experimental)
 	{}
 
 	bool checkSyntax(ASTNode const& _astRoot);
@@ -88,6 +91,9 @@ private:
 
 	bool visit(ContractDefinition const& _contract) override;
 	void endVisit(ContractDefinition const& _contract) override;
+
+	bool visit(UsingForDirective const& _usingFor) override;
+
 	bool visit(FunctionDefinition const& _function) override;
 	bool visit(FunctionTypeName const& _node) override;
 
@@ -106,6 +112,9 @@ private:
 
 	/// Flag that indicates whether we are inside an unchecked block.
 	bool m_uncheckedArithmetic = false;
+
+	/// Flag that indicates whether the experimental mode is enabled.
+	bool m_experimental = false;
 
 	int m_inLoopDepth = 0;
 	std::optional<ContractKind> m_currentContractKind;

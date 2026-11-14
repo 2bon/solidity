@@ -25,5 +25,8 @@ contract C {
 }
 // ====
 // SMTEngine: all
+// SMTIgnoreCex: yes
 // ----
-// Warning 6328: (307-327): CHC: Assertion violation happens here.\nCounterexample:\nt = {x: 11, s: {innerM, sum: 21239}}\n\nTransaction trace:\nC.constructor(0){ msg.sender: 0x6dc4 }\nState: t = {x: 11, s: {innerM, sum: 21239}}\nC.g()
+// Warning 6328: (307-327): CHC: Assertion violation happens here.\nCounterexample:\nt = {x: 11, s: {innerM, sum: 8856}}\n\nTransaction trace:\nC.constructor(0){ msg.sender: 0x6532 }\nState: t = {x: 11, s: {innerM, sum: 8856}}\nC.g()
+// Info 1391: CHC: 1 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

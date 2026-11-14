@@ -93,6 +93,8 @@ void ContractDefinition::accept(ASTVisitor& _visitor)
 		if (m_documentation)
 			m_documentation->accept(_visitor);
 		listAccept(m_baseContracts, _visitor);
+		if (m_storageLayoutSpecifier)
+			m_storageLayoutSpecifier->accept(_visitor);
 		listAccept(m_subNodes, _visitor);
 	}
 	_visitor.endVisit(*this);
@@ -105,6 +107,8 @@ void ContractDefinition::accept(ASTConstVisitor& _visitor) const
 		if (m_documentation)
 			m_documentation->accept(_visitor);
 		listAccept(m_baseContracts, _visitor);
+		if (m_storageLayoutSpecifier)
+			m_storageLayoutSpecifier->accept(_visitor);
 		listAccept(m_subNodes, _visitor);
 	}
 	_visitor.endVisit(*this);
@@ -194,7 +198,7 @@ void UsingForDirective::accept(ASTVisitor& _visitor)
 {
 	if (_visitor.visit(*this))
 	{
-		m_libraryName->accept(_visitor);
+		listAccept(m_functionsOrLibrary, _visitor);
 		if (m_typeName)
 			m_typeName->accept(_visitor);
 	}
@@ -205,7 +209,7 @@ void UsingForDirective::accept(ASTConstVisitor& _visitor) const
 {
 	if (_visitor.visit(*this))
 	{
-		m_libraryName->accept(_visitor);
+		listAccept(m_functionsOrLibrary, _visitor);
 		if (m_typeName)
 			m_typeName->accept(_visitor);
 	}
@@ -1021,6 +1025,22 @@ void Literal::accept(ASTVisitor& _visitor)
 void Literal::accept(ASTConstVisitor& _visitor) const
 {
 	_visitor.visit(*this);
+	_visitor.endVisit(*this);
+}
+
+void StorageLayoutSpecifier::accept(ASTVisitor& _visitor)
+{
+	if (_visitor.visit(*this))
+		m_baseSlotExpression->accept(_visitor);
+
+	_visitor.endVisit(*this);
+}
+
+void StorageLayoutSpecifier::accept(ASTConstVisitor& _visitor) const
+{
+	if (_visitor.visit(*this))
+		m_baseSlotExpression->accept(_visitor);
+
 	_visitor.endVisit(*this);
 }
 

@@ -40,15 +40,16 @@ class Parser: public langutil::ParserBase
 public:
 	explicit Parser(
 		langutil::ErrorReporter& _errorReporter,
-		langutil::EVMVersion _evmVersion,
-		bool _errorRecovery = false
+		langutil::EVMVersion _evmVersion
 	):
-		ParserBase(_errorReporter, _errorRecovery),
+		ParserBase(_errorReporter),
 		m_evmVersion(_evmVersion)
 	{}
 
 	ASTPointer<SourceUnit> parse(langutil::CharStream& _charStream);
 
+	/// Returns the maximal AST node ID assigned so far
+	int64_t maxID() const { return m_currentNodeID; }
 private:
 	class ASTNodeFactory;
 
@@ -77,6 +78,14 @@ private:
 		std::vector<ASTPointer<ModifierInvocation>> modifiers;
 	};
 
+	/// Struct to share parsed function call arguments.
+	struct FunctionCallArguments
+	{
+		std::vector<ASTPointer<Expression>> arguments;
+		std::vector<ASTPointer<ASTString>> parameterNames;
+		std::vector<langutil::SourceLocation> parameterNameLocations;
+	};
+
 	///@{
 	///@name Parsing functions for the AST nodes
 	void parsePragmaVersion(langutil::SourceLocation const& _location, std::vector<Token> const& _tokens, std::vector<std::string> const& _literals);
@@ -92,7 +101,7 @@ private:
 	ASTPointer<OverrideSpecifier> parseOverrideSpecifier();
 	StateMutability parseStateMutability();
 	FunctionHeaderParserResult parseFunctionHeader(bool _isStateVariable);
-	ASTPointer<ASTNode> parseFunctionDefinition(bool _freeFunction = false);
+	ASTPointer<FunctionDefinition> parseFunctionDefinition(bool _freeFunction = false, bool _allowBody = true);
 	ASTPointer<StructDefinition> parseStructDefinition();
 	ASTPointer<EnumDefinition> parseEnumDefinition();
 	ASTPointer<UserDefinedValueTypeDefinition> parseUserDefinedValueTypeDefinition();
@@ -151,11 +160,15 @@ private:
 	ASTPointer<Expression> parseLeftHandSideExpression(
 		ASTPointer<Expression> const& _partiallyParsedExpression = ASTPointer<Expression>()
 	);
+	ASTPointer<Expression> parseLiteral();
 	ASTPointer<Expression> parsePrimaryExpression();
 	std::vector<ASTPointer<Expression>> parseFunctionCallListArguments();
-	std::pair<std::vector<ASTPointer<Expression>>, std::vector<ASTPointer<ASTString>>> parseFunctionCallArguments();
-	std::pair<std::vector<ASTPointer<Expression>>, std::vector<ASTPointer<ASTString>>> parseNamedArguments();
+
+	FunctionCallArguments parseFunctionCallArguments();
+	FunctionCallArguments parseNamedArguments();
 	std::pair<ASTPointer<ASTString>, langutil::SourceLocation> expectIdentifierWithLocation();
+
+	ASTPointer<StorageLayoutSpecifier> parseStorageLayoutSpecifier();
 	///@}
 
 	///@{
@@ -198,16 +211,18 @@ private:
 	/// or an expression;
 	IndexAccessedPath parseIndexAccessedPath();
 	/// @returns a typename parsed in look-ahead fashion from something like "a.b[8][2**70]",
-	/// or an empty pointer if an empty @a _pathAndIncides has been supplied.
+	/// or an empty pointer if an empty @a _pathAndIndices has been supplied.
 	ASTPointer<TypeName> typeNameFromIndexAccessStructure(IndexAccessedPath const& _pathAndIndices);
 	/// @returns an expression parsed in look-ahead fashion from something like "a.b[8][2**70]",
-	/// or an empty pointer if an empty @a _pathAndIncides has been supplied.
+	/// or an empty pointer if an empty @a _pathAndIndices has been supplied.
 	ASTPointer<Expression> expressionFromIndexAccessStructure(IndexAccessedPath const& _pathAndIndices);
 
 	ASTPointer<ASTString> expectIdentifierToken();
 	ASTPointer<ASTString> expectIdentifierTokenOrAddress();
 	ASTPointer<ASTString> getLiteralAndAdvance();
 	///@}
+
+	bool isQuotedPath() const;
 
 	/// Creates an empty ParameterList at the current location (used if parameters can be omitted).
 	ASTPointer<ParameterList> createEmptyParameterList();

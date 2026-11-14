@@ -22,6 +22,7 @@
 #pragma once
 
 #include <libyul/backends/evm/ControlFlowGraph.h>
+#include <libyul/backends/evm/EVMDialect.h>
 
 #include <map>
 
@@ -52,21 +53,32 @@ public:
 		/// Number of slots that need to be saved.
 		size_t deficit = 0;
 		/// Set of variables, eliminating which would decrease the stack deficit.
-		std::vector<YulString> variableChoices;
+		std::vector<YulName> variableChoices;
 	};
 
-	static StackLayout run(CFG const& _cfg);
+	static StackLayout run(CFG const& _cfg, EVMDialect const& _evmDialect);
 	/// @returns a map from function names to the stack too deep errors occurring in that function.
 	/// Requires @a _cfg to be a control flow graph generated from disambiguated Yul.
 	/// The empty string is mapped to the stack too deep errors of the main entry point.
-	static std::map<YulString, std::vector<StackTooDeep>> reportStackTooDeep(CFG const& _cfg);
+	static std::map<YulName, std::vector<StackTooDeep>> reportStackTooDeep(
+		CFG const& _cfg,
+		EVMDialect const& _evmDialect
+	);
 	/// @returns all stack too deep errors in the function named @a _functionName.
 	/// Requires @a _cfg to be a control flow graph generated from disambiguated Yul.
 	/// If @a _functionName is empty, the stack too deep errors of the main entry point are reported instead.
-	static std::vector<StackTooDeep> reportStackTooDeep(CFG const& _cfg, YulString _functionName);
+	static std::vector<StackTooDeep> reportStackTooDeep(
+		CFG const& _cfg,
+		YulName _functionName,
+		EVMDialect const& _evmDialect
+	);
 
 private:
-	StackLayoutGenerator(StackLayout& _context);
+	StackLayoutGenerator(
+		StackLayout& _context,
+		CFG::FunctionInfo const* _functionInfo,
+		EVMDialect const& _evmDialect
+	);
 
 	/// @returns the optimal entry stack layout, s.t. @a _operation can be applied to it and
 	/// the result can be transformed to @a _exitStack with minimal stack shuffling.
@@ -79,7 +91,7 @@ private:
 
 	/// Main algorithm walking the graph from entry to exit and propagating back the stack layouts to the entries.
 	/// Iteratively reruns itself along backwards jumps until the layout is stabilized.
-	void processEntryPoint(CFG::BasicBlock const& _entry);
+	void processEntryPoint(CFG::BasicBlock const& _entry, CFG::FunctionInfo const* _functionInfo = nullptr);
 
 	/// @returns the best known exit layout of @a _block, if all dependencies are already @a _visited.
 	/// If not, adds the dependencies to @a _dependencyList and @returns std::nullopt.
@@ -100,7 +112,7 @@ private:
 
 	/// Calculates the ideal stack layout, s.t. both @a _stack1 and @a _stack2 can be achieved with minimal
 	/// stack shuffling when starting from the returned layout.
-	static Stack combineStack(Stack const& _stack1, Stack const& _stack2);
+	static Stack combineStack(Stack const& _stack1, Stack const& _stack2, size_t _reachableStackDepth);
 
 	/// Walks through the CFG and reports any stack too deep errors that would occur when generating code for it
 	/// without countermeasures.
@@ -109,9 +121,19 @@ private:
 	/// @returns a copy of @a _stack stripped of all duplicates and slots that can be freely generated.
 	/// Attempts to create a layout that requires a minimal amount of operations to reconstruct the original
 	/// stack @a _stack.
-	static Stack compressStack(Stack _stack);
+	static Stack compressStack(Stack _stack, size_t _reachableStackDepth);
+
+	//// Fills in junk when entering branches that do not need a clean stack in case the result is cheaper.
+	void fillInJunk(CFG::BasicBlock const& _block, CFG::FunctionInfo const* _functionInfo = nullptr);
+
+	size_t reachableStackDepth() const
+	{
+		return m_evmDialect.reachableStackDepth();
+	}
 
 	StackLayout& m_layout;
+	CFG::FunctionInfo const* m_currentFunctionInfo = nullptr;
+	EVMDialect const& m_evmDialect;
 };
 
 }

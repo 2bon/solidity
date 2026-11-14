@@ -15,9 +15,11 @@ contract C {
 // ====
 // SMTEngine: all
 // SMTIgnoreCex: yes
+// SMTIgnoreOS: macos
 // ----
-// Warning 6328: (193-226): CHC: Assertion violation might happen here.
+// Warning 9207: (141-152): 'transfer' is deprecated and scheduled for removal. Use 'call{value: <amount>}("")' instead.
+// Warning 8656: (141-156): CHC: Insufficient funds happens here.
+// Warning 6328: (193-226): CHC: Assertion violation happens here.
 // Warning 6328: (245-279): CHC: Assertion violation happens here.
 // Warning 6328: (298-332): CHC: Assertion violation happens here.
-// Warning 1236: (141-156): BMC: Insufficient funds happens here.
-// Warning 4661: (193-226): BMC: Assertion violation happens here.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

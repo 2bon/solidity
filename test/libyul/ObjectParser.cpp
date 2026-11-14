@@ -22,11 +22,12 @@
 #include <test/Common.h>
 
 #include <test/libsolidity/ErrorCheck.h>
+#include <test/libyul/Common.h>
 
 #include <liblangutil/DebugInfoSelection.h>
 #include <liblangutil/Scanner.h>
 
-#include <libyul/AssemblyStack.h>
+#include <libyul/YulStack.h>
 #include <libyul/backends/evm/EVMDialect.h>
 
 #include <libsolidity/interface/OptimiserSettings.h>
@@ -43,10 +44,9 @@
 #include <string>
 #include <sstream>
 
-using namespace ranges;
-using namespace std;
 using namespace solidity::frontend;
 using namespace solidity::langutil;
+using namespace std::string_literals;
 
 namespace solidity::yul::test
 {
@@ -54,57 +54,22 @@ namespace solidity::yul::test
 namespace
 {
 
-pair<bool, ErrorList> parse(string const& _source)
+std::optional<Error> parseAndReturnFirstError(std::string const& _source, bool _allowWarningsAndInfos = true)
 {
-	try
-	{
-		AssemblyStack asmStack(
-			solidity::test::CommonOptions::get().evmVersion(),
-			AssemblyStack::Language::StrictAssembly,
-			solidity::frontend::OptimiserSettings::none(),
-			DebugInfoSelection::All()
-		);
-		bool success = asmStack.parseAndAnalyze("source", _source);
-		return {success, asmStack.errors()};
-	}
-	catch (FatalError const&)
-	{
-		BOOST_FAIL("Fatal error leaked.");
-	}
-	return {false, {}};
+	YulStack yulStack = parseYul(_source, "source", OptimiserSettings::none());
+	if (!yulStack.hasErrorsWarningsOrInfos() || (!yulStack.hasErrors() && _allowWarningsAndInfos))
+		return {};
+
+	BOOST_REQUIRE_EQUAL(yulStack.errors().size(), 1);
+	return *yulStack.errors().front();
 }
 
-optional<Error> parseAndReturnFirstError(string const& _source, bool _allowWarningsAndInfos = true)
-{
-	bool success;
-	ErrorList errors;
-	tie(success, errors) = parse(_source);
-	if (!success)
-	{
-		BOOST_REQUIRE_EQUAL(errors.size(), 1);
-		return *errors.front();
-	}
-	else
-	{
-		// If success is true, there might still be an error in the assembly stage.
-		if (_allowWarningsAndInfos && !Error::containsErrors(errors))
-			return {};
-		else if (!errors.empty())
-		{
-			if (!_allowWarningsAndInfos)
-				BOOST_CHECK_EQUAL(errors.size(), 1);
-			return *errors.front();
-		}
-	}
-	return {};
-}
-
-bool successParse(string const& _source, bool _allowWarningsAndInfos = true)
+bool successParse(std::string const& _source, bool _allowWarningsAndInfos = true)
 {
 	return !parseAndReturnFirstError(_source, _allowWarningsAndInfos);
 }
 
-Error expectError(string const& _source, bool _allowWarningsAndInfos = false)
+Error expectError(std::string const& _source, bool _allowWarningsAndInfos = false)
 {
 
 	auto error = parseAndReturnFirstError(_source, _allowWarningsAndInfos);
@@ -112,18 +77,18 @@ Error expectError(string const& _source, bool _allowWarningsAndInfos = false)
 	return *error;
 }
 
-tuple<optional<SourceNameMap>, ErrorList> tryGetSourceLocationMapping(string _source)
+std::tuple<std::optional<SourceNameMap>, ErrorList> tryGetSourceLocationMapping(std::string _source)
 {
-	vector<string> lines;
+	std::vector<std::string> lines;
 	boost::split(lines, _source, boost::is_any_of("\n"));
-	string source = util::joinHumanReadablePrefixed(lines, "\n///") + "\n{}\n";
+	std::string source = util::joinHumanReadablePrefixed(lines, "\n///") + "\n{}\n";
 
 	ErrorList errors;
 	ErrorReporter reporter(errors);
-	Dialect const& dialect = yul::EVMDialect::strictAssemblyForEVM(EVMVersion::berlin());
+	Dialect const& dialect = yul::EVMDialect::strictAssemblyForEVM(solidity::test::CommonOptions::get().evmVersion());
 	ObjectParser objectParser{reporter, dialect};
-	CharStream stream(move(source), "");
-	auto object = objectParser.parse(make_shared<Scanner>(stream), false);
+	CharStream stream(std::move(source), "");
+	auto object = objectParser.parse(std::make_shared<Scanner>(stream), false);
 	BOOST_REQUIRE(object && object->debugData);
 	return {object->debugData->sourceNames, std::move(errors)};
 }
@@ -147,9 +112,9 @@ BOOST_AUTO_TEST_CASE(empty_code)
 
 BOOST_AUTO_TEST_CASE(recursion_depth)
 {
-	string input;
+	std::string input;
 	for (size_t i = 0; i < 20000; i++)
-		input += "object \"a" + to_string(i) + "\" { code {} ";
+		input += "object \"a" + std::to_string(i) + "\" { code {} ";
 	for (size_t i = 0; i < 20000; i++)
 		input += "}";
 
@@ -158,7 +123,7 @@ BOOST_AUTO_TEST_CASE(recursion_depth)
 
 BOOST_AUTO_TEST_CASE(to_string)
 {
-	string code = R"(
+	std::string code = R"(
 		object "O" {
 			code { let x := mload(0) if x { sstore(0, 1) } }
 			object "i" { code {} data "j" "def" }
@@ -166,7 +131,7 @@ BOOST_AUTO_TEST_CASE(to_string)
 			data "k" hex"010203"
 		}
 	)";
-	string expectation = R"(object "O" {
+	std::string expectation = R"(object "O" {
 	code {
 		let x := mload(0)
 		if x { sstore(0, 1) }
@@ -180,11 +145,10 @@ BOOST_AUTO_TEST_CASE(to_string)
 }
 )";
 	expectation = boost::replace_all_copy(expectation, "\t", "    ");
-	AssemblyStack asmStack(
+	YulStack asmStack(
 		solidity::test::CommonOptions::get().evmVersion(),
-		AssemblyStack::Language::StrictAssembly,
 		solidity::frontend::OptimiserSettings::none(),
-		DebugInfoSelection::All()
+		DebugInfoSelection::AllExceptExperimental()
 	);
 	BOOST_REQUIRE(asmStack.parseAndAnalyze("source", code));
 	BOOST_CHECK_EQUAL(asmStack.print(), expectation);
@@ -247,6 +211,24 @@ BOOST_AUTO_TEST_CASE(use_src_error_unexpected_trailing_tokens)
 	auto const [mapping, errors] = tryGetSourceLocationMapping(
 		R"(@use-src 1:"file.sol" @use-src 2:"foo.sol")"
 	);
+
+	BOOST_REQUIRE_EQUAL(errors.size(), 1);
+	BOOST_CHECK_EQUAL(errors.front()->errorId().error, 9804);
+}
+
+BOOST_AUTO_TEST_CASE(use_src_invalid_syntax_hex_source_index)
+{
+	// only decimal indices are allowed, 0x10 must not be truncated to 0
+	auto const [mapping, errors] = tryGetSourceLocationMapping(R"(@use-src 0x10:"contract.sol")");
+
+	BOOST_REQUIRE_EQUAL(errors.size(), 1);
+	BOOST_CHECK_EQUAL(errors.front()->errorId().error, 9804);
+}
+
+BOOST_AUTO_TEST_CASE(use_src_invalid_syntax_scientific_notation_source_index)
+{
+	// only decimal indices are allowed, 1e2 must not be truncated to 1
+	auto const [mapping, errors] = tryGetSourceLocationMapping(R"(@use-src 1e2:"contract.sol")");
 
 	BOOST_REQUIRE_EQUAL(errors.size(), 1);
 	BOOST_CHECK_EQUAL(errors.front()->errorId().error, 9804);

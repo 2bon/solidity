@@ -70,7 +70,7 @@ inline rational makeRational(bigint const& _numerator, bigint const& _denominato
 		return rational(_numerator, _denominator);
 }
 
-enum class DataLocation { Storage, CallData, Memory };
+enum class DataLocation { Storage, Transient, CallData, Memory };
 
 
 /**
@@ -81,7 +81,10 @@ class StorageOffsets
 public:
 	/// Resets the StorageOffsets objects and determines the position in storage for each
 	/// of the elements of @a _types.
-	void computeOffsets(TypePointers const& _types);
+	/// Calculated positions are absolute and start at @a _baseSlot.
+	/// Assumes that @a _types is small enough to fit in the area between @a _baseSlot and the end of storage
+	/// (the caller is responsible for validating that).
+	void computeOffsets(TypePointers const& _types, u256 _baseSlot = 0);
 	/// @returns the offset of the given member, might be null if the member is not part of storage.
 	std::pair<u256, unsigned> const* offset(size_t _index) const;
 	/// @returns the total number of slots occupied by all members.
@@ -174,9 +177,26 @@ public:
 
 	enum class Category
 	{
-		Address, Integer, RationalNumber, StringLiteral, Bool, FixedPoint, Array, ArraySlice,
-		FixedBytes, Contract, Struct, Function, Enum, UserDefinedValueType, Tuple,
-		Mapping, TypeType, Modifier, Magic, Module,
+		Address,
+		Integer,
+		RationalNumber,
+		StringLiteral,
+		Bool,
+		FixedPoint,
+		Array,
+		ArraySlice,
+		FixedBytes,
+		Contract,
+		Struct,
+		Function,
+		Enum,
+		UserDefinedValueType,
+		Tuple,
+		Mapping,
+		TypeType,
+		Modifier,
+		Magic,
+		Module,
 		InaccessibleDynamic
 	};
 
@@ -326,7 +346,7 @@ public:
 	/// given location.
 	virtual bool dataStoredIn(DataLocation) const { return false; }
 
-	/// Returns the list of all members of this type. Default implementation: no members apart from bound.
+	/// Returns the list of all members of this type. Default implementation: no members apart from attached functions.
 	/// @param _currentScope scope in which the members are accessed.
 	MemberList const& members(ASTNode const* _currentScope) const;
 	/// Convenience method, returns the type of the given named member or an empty pointer if no such member exists.
@@ -335,10 +355,11 @@ public:
 		return members(_currentScope).memberType(_name);
 	}
 
-	virtual std::string toString(bool _short) const = 0;
+	virtual std::string toString(bool _withoutDataLocation) const = 0;
 	std::string toString() const { return toString(false); }
 	/// @returns the canonical name of this type for use in library function signatures.
 	virtual std::string canonicalName() const { return toString(true); }
+	virtual std::string humanReadableName() const { return toString(); }
 	/// @returns the signature of this type in external functions, i.e. `uint256` for integers
 	/// or `(uint256,bytes8)[2]` for an array of structs. If @a _structsByName,
 	/// structs are given by canonical name like `ContractName.StructName[2]`.
@@ -369,16 +390,35 @@ public:
 	/// are returned without modification.
 	virtual TypeResult interfaceType(bool /*_inLibrary*/) const { return nullptr; }
 
+	/// @returns the declaration of a user defined type (enum, struct, user defined value type).
+	/// Returns nullptr otherwise.
+	virtual Declaration const* typeDefinition() const { return nullptr; }
+
 	/// Clears all internally cached values (if any).
 	virtual void clearCache() const;
 
+	/// Scans all "using for" directives in the @a _scope for functions implementing
+	/// the operator represented by @a _token. Returns the set of all definitions where the type
+	/// of the first argument matches this type object.
+	///
+	/// @note: If the AST has passed analysis without errors,
+	/// the function will find at most one definition for an operator.
+	///
+	/// @param _unary If true, only definitions that accept exactly one argument are included.
+	/// Otherwise only definitions that accept exactly two arguments.
+	std::set<FunctionDefinition const*, ASTCompareByID<ASTNode>> operatorDefinitions(
+		Token _token,
+		ASTNode const& _scope,
+		bool _unary
+	) const;
+
 private:
 	/// @returns a member list containing all members added to this type by `using for` directives.
-	static MemberList::MemberMap boundFunctions(Type const& _type, ASTNode const& _scope);
+	static MemberList::MemberMap attachedFunctions(Type const& _type, ASTNode const& _scope);
 
 protected:
 	/// @returns the members native to this type depending on the given context. This function
-	/// is used (in conjunction with boundFunctions to fill m_members below.
+	/// is used (in conjunction with attachedFunctions to fill m_members below.
 	virtual MemberList::MemberMap nativeMembers(ASTNode const* /*_currentScope*/) const
 	{
 		return MemberList::MemberMap();
@@ -423,7 +463,7 @@ public:
 
 	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
 
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 
 	u256 literalValue(Literal const* _literal) const override;
@@ -458,6 +498,7 @@ public:
 	TypeResult unaryOperatorResult(Token _operator) const override;
 	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
 
+	bool operator==(IntegerType const& _other) const;
 	bool operator==(Type const& _other) const override;
 
 	unsigned calldataEncodedSize(bool _padded = true) const override { return _padded ? 32 : m_bits / 8; }
@@ -466,7 +507,7 @@ public:
 	bool isValueType() const override { return true; }
 	bool nameable() const override { return true; }
 
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
@@ -513,7 +554,7 @@ public:
 	bool isValueType() const override { return true; }
 	bool nameable() const override { return true; }
 
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
@@ -563,7 +604,7 @@ public:
 
 	bool canBeStored() const override { return false; }
 
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 	u256 literalValue(Literal const* _literal) const override;
 	Type const* mobileType() const override;
 
@@ -766,7 +807,7 @@ public:
 	/// if the type has an interfaceType.
 	virtual BoolResult validForLocation(DataLocation _loc) const = 0;
 
-	bool operator==(ReferenceType const& _other) const
+	bool equals(ReferenceType const& _other) const
 	{
 		return location() == _other.location() && isPointer() == _other.isPointer();
 	}
@@ -797,14 +838,14 @@ public:
 	/// Constructor for a byte array ("bytes") and string.
 	explicit ArrayType(DataLocation _location, bool _isString = false);
 
-	/// Constructor for a dynamically sized array type ("type[]")
+	/// Constructor for a dynamically sized array type ("<type>[]")
 	ArrayType(DataLocation _location, Type const* _baseType):
 		ReferenceType(_location),
 		m_baseType(copyForLocationIfReference(_baseType))
 	{
 	}
 
-	/// Constructor for a fixed-size array type ("type[20]")
+	/// Constructor for a fixed-size array type ("<type>[<length>]")
 	ArrayType(DataLocation _location, Type const* _baseType, u256 _length):
 		ReferenceType(_location),
 		m_baseType(copyForLocationIfReference(_baseType)),
@@ -817,6 +858,7 @@ public:
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	std::string richIdentifier() const override;
+	bool operator==(ArrayType const& _other) const;
 	bool operator==(Type const& _other) const override;
 	unsigned calldataEncodedSize(bool) const override;
 	unsigned calldataEncodedTailSize() const override;
@@ -827,7 +869,8 @@ public:
 	bool containsNestedMapping() const override { return m_baseType->containsNestedMapping(); }
 	bool nameable() const override { return true; }
 
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
+	std::string humanReadableName() const override;
 	std::string canonicalName() const override;
 	std::string signatureInExternalFunction(bool _structsByName) const override;
 	MemberList::MemberMap nativeMembers(ASTNode const* _currentScope) const override;
@@ -891,7 +934,8 @@ public:
 	unsigned calldataEncodedTailSize() const override { return 32; }
 	bool isDynamicallySized() const override { return true; }
 	bool isDynamicallyEncoded() const override { return true; }
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
+	std::string humanReadableName() const override;
 	Type const* mobileType() const override;
 
 	BoolResult validForLocation(DataLocation _loc) const override { return m_arrayType.validForLocation(_loc); }
@@ -935,7 +979,7 @@ public:
 	bool leftAligned() const override { solAssert(!isSuper(), ""); return false; }
 	bool isValueType() const override { return !isSuper(); }
 	bool nameable() const override { return !isSuper(); }
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 
 	MemberList::MemberMap nativeMembers(ASTNode const* _currentScope) const override;
@@ -961,9 +1005,12 @@ public:
 	/// Returns the function type of the constructor modified to return an object of the contract's type.
 	FunctionType const* newExpressionType() const;
 
-	/// @returns a list of all state variables (including inherited) of the contract and their
-	/// offsets in storage.
-	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> stateVariables() const;
+	/// @returns a list of all state variables in the linearized inheritance hierarchy and
+	/// their respective slots and offsets in storage/transient storage.
+	/// It should only be called for the top level contract in order to get the absolute slots and
+	/// offsets values in storage/transient storage. Otherwise, the slots of the state variables
+	/// will be relative to the contract position in the hierarchy.
+	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> linearizedStateVariables(DataLocation _location) const;
 	/// @returns a list of all immutable variables (including inherited) of the contract.
 	std::vector<VariableDeclaration const*> immutableVariables() const;
 protected:
@@ -997,12 +1044,14 @@ public:
 	u256 storageSize() const override;
 	bool containsNestedMapping() const override;
 	bool nameable() const override { return true; }
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 
 	MemberList::MemberMap nativeMembers(ASTNode const* _currentScope) const override;
 
 	Type const* encodingType() const override;
 	TypeResult interfaceType(bool _inLibrary) const override;
+
+	Declaration const* typeDefinition() const override;
 
 	BoolResult validForLocation(DataLocation _loc) const override;
 
@@ -1057,7 +1106,7 @@ public:
 	}
 	unsigned storageBytes() const override;
 	bool leftAligned() const override { return false; }
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 	bool isValueType() const override { return true; }
 	bool nameable() const override { return true; }
@@ -1068,6 +1117,8 @@ public:
 	{
 		return _inLibrary ? this : encodingType();
 	}
+
+	Declaration const* typeDefinition() const override;
 
 	EnumDefinition const& enumDefinition() const { return m_enum; }
 	/// @returns the value that the string has in the Enum
@@ -1101,7 +1152,11 @@ public:
 	TypeResult binaryOperatorResult(Token, Type const*) const override { return nullptr; }
 	Type const* encodingType() const override { return &underlyingType(); }
 	TypeResult interfaceType(bool /* _inLibrary */) const override {return &underlyingType(); }
+
+	Declaration const* typeDefinition() const override;
+
 	std::string richIdentifier() const override;
+	bool operator==(UserDefinedValueType const& _other) const;
 	bool operator==(Type const& _other) const override;
 
 	unsigned calldataEncodedSize(bool _padded) const override { return underlyingType().calldataEncodedSize(_padded); }
@@ -1139,7 +1194,7 @@ public:
 		return false;
 	}
 
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 	std::string signatureInExternalFunction(bool) const override { solAssert(false, ""); }
 
@@ -1165,7 +1220,8 @@ public:
 	std::string richIdentifier() const override;
 	bool operator==(Type const& _other) const override;
 	TypeResult binaryOperatorResult(Token, Type const*) const override { return nullptr; }
-	std::string toString(bool) const override;
+	std::string toString(bool _withoutDataLocation) const override;
+	std::string humanReadableName() const override;
 	bool canBeStored() const override { return false; }
 	u256 storageSize() const override;
 	bool hasSimpleZeroValueInMemory() const override { return false; }
@@ -1211,6 +1267,7 @@ public:
 		Send, ///< CALL, but without data and gas
 		Transfer, ///< CALL, but without data and throws on error
 		KECCAK256, ///< KECCAK256
+		ERC7201, ///< erc7201(...)
 		Selfdestruct, ///< SELFDESTRUCT
 		Revert, ///< REVERT
 		ECRecover, ///< CALL to special contract for ecrecover
@@ -1223,6 +1280,7 @@ public:
 		SetGas, ///< modify the default gas value for the function call
 		SetValue, ///< modify the default value transfer for the function call
 		BlockHash, ///< BLOCKHASH
+		BlobHash, ///< BLOBHASH
 		AddMod, ///< ADDMOD
 		MulMod, ///< MULMOD
 		ArrayPush, ///< .push() to a dynamically sized array in storage
@@ -1257,7 +1315,7 @@ public:
 		bool saltSet = false;
 		/// true iff the function is called as arg1.fun(arg2, ..., argn).
 		/// This is achieved through the "using for" directive.
-		bool bound = false;
+		bool hasBoundFirstArgument = false;
 
 		static Options withArbitraryParameters()
 		{
@@ -1272,7 +1330,7 @@ public:
 			result.gasSet = _type.gasSet();
 			result.valueSet = _type.valueSet();
 			result.saltSet = _type.saltSet();
-			result.bound = _type.bound();
+			result.hasBoundFirstArgument = _type.hasBoundFirstArgument();
 			return result;
 		}
 	};
@@ -1307,7 +1365,7 @@ public:
 	)
 	{
 		// In this constructor, only the "arbitrary Parameters" option should be used.
-		solAssert(!bound() && !gasSet() && !valueSet() && !saltSet());
+		solAssert(!hasBoundFirstArgument() && !gasSet() && !valueSet() && !saltSet());
 	}
 
 	/// Detailed constructor, use with care.
@@ -1339,8 +1397,8 @@ public:
 			"Return parameter names list must match return parameter types list!"
 		);
 		solAssert(
-			!bound() || !m_parameterTypes.empty(),
-			"Attempted construction of bound function without self type"
+			!hasBoundFirstArgument() || !m_parameterTypes.empty(),
+			"Attempted construction of attached function without self type"
 		);
 	}
 
@@ -1357,7 +1415,7 @@ public:
 	/// storage pointers) are replaced by InaccessibleDynamicType instances.
 	TypePointers returnParameterTypesWithoutDynamicTypes() const;
 	std::vector<std::string> const& returnParameterNames() const { return m_returnParameterNames; }
-	/// @returns the "self" parameter type for a bound function
+	/// @returns the "self" parameter type for an attached function
 	Type const* selfType() const;
 
 	std::string richIdentifier() const override;
@@ -1367,7 +1425,8 @@ public:
 	TypeResult unaryOperatorResult(Token _operator) const override;
 	TypeResult binaryOperatorResult(Token, Type const*) const override;
 	std::string canonicalName() const override;
-	std::string toString(bool _short) const override;
+	std::string humanReadableName() const override;
+	std::string toString(bool _withoutDataLocation) const override;
 	unsigned calldataEncodedSize(bool _padded) const override;
 	bool canBeStored() const override { return m_kind == Kind::Internal || m_kind == Kind::External; }
 	u256 storageSize() const override;
@@ -1390,8 +1449,8 @@ public:
 
 	/// @returns true if this function can take the given arguments (possibly
 	/// after implicit conversion).
-	/// @param _selfType if the function is bound, this has to be supplied and is the type of the
-	/// expression the function is called on.
+	/// @param _selfType if the function is attached as a member function, this has to be supplied
+	/// and is the type of the expression the function is called on.
 	bool canTakeArguments(
 		FuncCallArguments const& _arguments,
 		Type const* _selfType = nullptr
@@ -1455,20 +1514,20 @@ public:
 	bool gasSet() const { return m_options.gasSet; }
 	bool valueSet() const { return m_options.valueSet; }
 	bool saltSet() const { return m_options.saltSet; }
-	bool bound() const { return m_options.bound; }
+	bool hasBoundFirstArgument() const { return m_options.hasBoundFirstArgument; }
 
 	/// @returns a copy of this type, where gas or value are set manually. This will never set one
 	/// of the parameters to false.
 	Type const* copyAndSetCallOptions(bool _setGas, bool _setValue, bool _setSalt) const;
 
-	/// @returns a copy of this function type with the `bound` flag set to true.
+	/// @returns a copy of this function type with the `hasBoundFirstArgument` flag set to true.
 	/// Should only be called on library functions.
-	FunctionTypePointer asBoundFunction() const;
+	FunctionTypePointer withBoundFirstArgument() const;
 
 	/// @returns a copy of this function type where the location of reference types is changed
 	/// from CallData to Memory. This is the type that would be used when the function is
 	/// called externally, as opposed to the parameter types that are available inside the function body.
-	/// Also supports variants to be used for library or bound calls.
+	/// Also supports variants to be used for library or attached function calls.
 	/// @param _inLibrary if true, uses DelegateCall as location.
 	FunctionTypePointer asExternallyCallableFunction(bool _inLibrary) const;
 
@@ -1494,14 +1553,14 @@ private:
 class MappingType: public CompositeType
 {
 public:
-	MappingType(Type const* _keyType, Type const* _valueType):
-		m_keyType(_keyType), m_valueType(_valueType) {}
+	MappingType(Type const* _keyType, ASTString _keyName, Type const* _valueType, ASTString _valueName):
+		m_keyType(_keyType), m_keyName(_keyName), m_valueType(_valueType), m_valueName(_valueName) {}
 
 	Category category() const override { return Category::Mapping; }
 
 	std::string richIdentifier() const override;
 	bool operator==(Type const& _other) const override;
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 	bool containsNestedMapping() const override { return true; }
 	TypeResult binaryOperatorResult(Token, Type const*) const override { return nullptr; }
@@ -1512,15 +1571,21 @@ public:
 	bool hasSimpleZeroValueInMemory() const override { solAssert(false, ""); }
 	bool nameable() const override { return true; }
 
+	std::vector<std::tuple<std::string, Type const*>> makeStackItems() const override;
+
 	Type const* keyType() const { return m_keyType; }
+	ASTString keyName() const { return m_keyName; }
 	Type const* valueType() const { return m_valueType; }
+	ASTString valueName() const { return m_valueName; }
 
 protected:
 	std::vector<Type const*> decomposition() const override { return {m_valueType}; }
 
 private:
 	Type const* m_keyType;
+	ASTString m_keyName;
 	Type const* m_valueType;
+	ASTString m_valueName;
 };
 
 /**
@@ -1542,8 +1607,9 @@ public:
 	bool canBeStored() const override { return false; }
 	u256 storageSize() const override;
 	bool hasSimpleZeroValueInMemory() const override { solAssert(false, ""); }
-	std::string toString(bool _short) const override { return "type(" + m_actualType->toString(_short) + ")"; }
+	std::string toString(bool _withoutDataLocation) const override { return "type(" + m_actualType->toString(_withoutDataLocation) + ")"; }
 	MemberList::MemberMap nativeMembers(ASTNode const* _currentScope) const override;
+	Type const* mobileType() const override { return nullptr; }
 
 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 protected:
@@ -1569,7 +1635,8 @@ public:
 	bool hasSimpleZeroValueInMemory() const override { solAssert(false, ""); }
 	std::string richIdentifier() const override;
 	bool operator==(Type const& _other) const override;
-	std::string toString(bool _short) const override;
+	bool operator==(ModifierType const& _other) const;
+	std::string toString(bool _withoutDataLocation) const override;
 protected:
 	std::vector<std::tuple<std::string, Type const*>> makeStackItems() const override { return {}; }
 private:
@@ -1595,7 +1662,7 @@ public:
 	bool hasSimpleZeroValueInMemory() const override { solAssert(false, ""); }
 	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
 
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 
 protected:
 	std::vector<std::tuple<std::string, Type const*>> makeStackItems() const override { return {}; }
@@ -1605,6 +1672,8 @@ private:
 
 /**
  * Special type for magic variables (block, msg, tx, type(...)), similar to a struct but without any reference.
+ *
+ * It is also the type shared by all instances of all custom error types.
  */
 class MagicType: public Type
 {
@@ -1614,6 +1683,7 @@ public:
 		Message, ///< "msg"
 		Transaction, ///< "tx"
 		ABI, ///< "abi"
+		Error, ///< custom error instance
 		MetaType ///< "type(...)"
 	};
 
@@ -1634,11 +1704,13 @@ public:
 	bool hasSimpleZeroValueInMemory() const override { solAssert(false, ""); }
 	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
 
-	std::string toString(bool _short) const override;
+	std::string toString(bool _withoutDataLocation) const override;
 
 	Kind kind() const { return m_kind; }
 
 	Type const* typeArgument() const;
+
+	Type const* mobileType() const override { return nullptr; }
 
 protected:
 	std::vector<std::tuple<std::string, Type const*>> makeStackItems() const override { return {}; }

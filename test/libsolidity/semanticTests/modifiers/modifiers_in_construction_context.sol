@@ -7,8 +7,5 @@ contract B is A {
   modifier m2 { _; }
   constructor() A() m1 m2 {  }
 }
-// ====
-// compileViaYul: also
-// compileToEwasm: also
 // ----
 // constructor() ->

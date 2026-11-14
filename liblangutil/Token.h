@@ -42,8 +42,7 @@
 
 #pragma once
 
-#include <liblangutil/UndefMacros.h>
-
+#include <cstdint>
 #include <iosfwd>
 #include <string>
 #include <tuple>
@@ -66,11 +65,11 @@ namespace solidity::langutil
 
 #define IGNORE_TOKEN(name, string, precedence)
 
-#define TOKEN_LIST(T, K)												\
-	/* End of source indicator. */										\
-	T(EOS, "EOS", 0)													\
-																		\
-	/* Punctuators (ECMA-262, section 7.7, page 15). */				\
+#define TOKEN_LIST(T, K)                                                \
+	/* End of source indicator. */                                      \
+	T(EOS, "EOS", 0)                                                    \
+	\
+	/* Punctuators (ECMA-262, section 7.7, page 15). */                 \
 	T(LParen, "(", 0)                                                   \
 	T(RParen, ")", 0)                                                   \
 	T(LBrack, "[", 0)                                                   \
@@ -84,9 +83,9 @@ namespace solidity::langutil
 	T(DoubleArrow, "=>", 0)                                             \
 	T(RightArrow, "->", 0)                                              \
 	\
-	/* Assignment operators. */										\
-	/* IsAssignmentOp() relies on this block of enum values being */	\
-	/* contiguous and sorted in the same order!*/						\
+	/* Assignment operators. */                                         \
+	/* IsAssignmentOp() relies on this block of enum values being */    \
+	/* contiguous and sorted in the same order!*/                       \
 	T(Assign, "=", 2)                                                   \
 	/* The following have to be in exactly the same order as the simple binary operators*/ \
 	T(AssignBitOr, "|=", 2)                                           \
@@ -292,7 +291,7 @@ namespace TokenTraits
 	constexpr size_t count() { return static_cast<size_t>(Token::NUM_TOKENS); }
 
 	// Predicates
-	constexpr bool isElementaryTypeName(Token tok) { return Token::Int <= tok && tok < Token::TypesEnd; }
+	constexpr bool isElementaryTypeName(Token _token) { return Token::Int <= _token && _token < Token::TypesEnd; }
 	constexpr bool isAssignmentOp(Token tok) { return Token::Assign <= tok && tok <= Token::AssignMod; }
 	constexpr bool isBinaryOp(Token op) { return Token::Comma <= op && op <= Token::Exp; }
 	constexpr bool isCommutativeOp(Token op) { return op == Token::BitOr || op == Token::BitXor || op == Token::BitAnd ||
@@ -302,7 +301,7 @@ namespace TokenTraits
 
 	constexpr bool isBitOp(Token op) { return (Token::BitOr <= op && op <= Token::BitAnd) || op == Token::BitNot; }
 	constexpr bool isBooleanOp(Token op) { return (Token::Or <= op && op <= Token::And) || op == Token::Not; }
-	constexpr bool isUnaryOp(Token op) { return (Token::Not <= op && op <= Token::Delete) || op == Token::Add || op == Token::Sub; }
+	constexpr bool isUnaryOp(Token op) { return (Token::Not <= op && op <= Token::Delete) || op == Token::Sub; }
 	constexpr bool isCountOp(Token op) { return op == Token::Inc || op == Token::Dec; }
 	constexpr bool isShiftOp(Token op) { return (Token::SHL <= op) && (op <= Token::SHR); }
 	constexpr bool isVariableVisibilitySpecifier(Token op) { return op == Token::Public || op == Token::Private || op == Token::Internal; }
@@ -325,7 +324,13 @@ namespace TokenTraits
 			tok == Token::TrueLiteral || tok == Token::FalseLiteral || tok == Token::HexStringLiteral || tok == Token::Hex;
 	}
 
-	bool isYulKeyword(std::string const& _literal);
+	bool isYulKeyword(std::string_view const _literal);
+
+	bool isFutureSolidityKeyword(std::string_view const _literal);
+
+	bool isFutureYulKeyword(std::string_view const _literal);
+
+	bool isFutureYulReservedIdentifier(std::string_view const _literal);
 
 	Token AssignmentToBinaryOp(Token op);
 

@@ -23,47 +23,63 @@ if(NOT EMSCRIPTEN)
 	endif()
 endif()
 
-eth_add_cxx_compiler_flag_if_supported(-Wimplicit-fallthrough)
+if(PEDANTIC)
+	eth_add_cxx_compiler_flag_if_supported(-Wimplicit-fallthrough)
+endif()
 
 # Prevent the path of the source directory from ending up in the binary via __FILE__ macros.
-eth_add_cxx_compiler_flag_if_supported("-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=/solidity")
+eth_add_cxx_compiler_flag_if_supported("-fmacro-prefix-map=${PROJECT_SOURCE_DIR}=/solidity")
 
 # -Wpessimizing-move warns when a call to std::move would prevent copy elision
 # if the argument was not wrapped in a call.  This happens when moving a local
 # variable in a return statement when the variable is the same type as the
 # return type or using a move to create a new object from a temporary object.
-eth_add_cxx_compiler_flag_if_supported(-Wpessimizing-move)
+if(PEDANTIC)
+	eth_add_cxx_compiler_flag_if_supported(-Wpessimizing-move)
+endif()
 
 # -Wredundant-move warns when an implicit move would already be made, so the
 # std::move call is not needed, such as when moving a local variable in a return
 # that is different from the return type.
-eth_add_cxx_compiler_flag_if_supported(-Wredundant-move)
+if(PEDANTIC)
+	eth_add_cxx_compiler_flag_if_supported(-Wredundant-move)
+endif()
 
 if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang"))
 	# Enables all the warnings about constructions that some users consider questionable,
 	# and that are easy to avoid.  Also enable some extra warning flags that are not
 	# enabled by -Wall.   Finally, treat at warnings-as-errors, which forces developers
 	# to fix warnings as they arise, so they don't accumulate "to be fixed later".
-	add_compile_options(-Wall)
-	add_compile_options(-Wextra)
-	add_compile_options(-Werror)
-	add_compile_options(-pedantic)
-	add_compile_options(-Wmissing-declarations)
-	add_compile_options(-Wno-unknown-pragmas)
-	add_compile_options(-Wimplicit-fallthrough)
-	add_compile_options(-Wsign-conversion)
-	add_compile_options(-Wconversion)
+	if(PEDANTIC)
+		add_compile_options(-Wall)
+		add_compile_options(-Wextra)
+		add_compile_options(-Werror)
+		add_compile_options(-pedantic)
+		add_compile_options(-Wmissing-declarations)
+		add_compile_options(-Wno-unknown-pragmas)
+		add_compile_options(-Wimplicit-fallthrough)
+		add_compile_options(-Wsign-conversion)
+		add_compile_options(-Wconversion)
 
-	eth_add_cxx_compiler_flag_if_supported(
-		$<$<COMPILE_LANGUAGE:CXX>:-Wextra-semi>
-	)
-	eth_add_cxx_compiler_flag_if_supported(-Wfinal-dtor-non-final-class)
-	eth_add_cxx_compiler_flag_if_supported(-Wnewline-eof)
-	eth_add_cxx_compiler_flag_if_supported(-Wsuggest-destructor-override)
-	eth_add_cxx_compiler_flag_if_supported(-Wduplicated-cond)
-	eth_add_cxx_compiler_flag_if_supported(-Wduplicate-enum)
-	eth_add_cxx_compiler_flag_if_supported(-Wlogical-op)
-	eth_add_cxx_compiler_flag_if_supported(-Wno-unknown-attributes)
+		check_cxx_compiler_flag(-Wextra-semi WEXTRA_SEMI)
+		if(WEXTRA_SEMI)
+			add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wextra-semi>)
+		endif()
+		# See https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=6b927b1297e66e26e62e722bf15c921dcbbd25b9
+		check_cxx_compiler_flag(-Wno-dangling-reference WNO_DANGLING_REFERENCE)
+		if (WNO_DANGLING_REFERENCE)
+            add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-dangling-reference>)
+		endif()
+
+
+		eth_add_cxx_compiler_flag_if_supported(-Wfinal-dtor-non-final-class)
+		eth_add_cxx_compiler_flag_if_supported(-Wnewline-eof)
+		eth_add_cxx_compiler_flag_if_supported(-Wsuggest-destructor-override)
+		eth_add_cxx_compiler_flag_if_supported(-Wduplicated-cond)
+		eth_add_cxx_compiler_flag_if_supported(-Wduplicate-enum)
+		eth_add_cxx_compiler_flag_if_supported(-Wlogical-op)
+		eth_add_cxx_compiler_flag_if_supported(-Wno-unknown-attributes)
+	endif()
 
 	# Configuration-specific compiler settings.
 	set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g3 -DETH_DEBUG")
@@ -73,9 +89,9 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 
 	# Additional GCC-specific compiler settings.
 	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-		# Check that we've got GCC 8.0 or newer.
-		if (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 8.0))
-			message(FATAL_ERROR "${PROJECT_NAME} requires g++ 8.0 or greater.")
+		# Check that we've got GCC 13.0 or newer.
+		if (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0))
+			message(FATAL_ERROR "${PROJECT_NAME} requires g++ 13.0 or greater.")
 		endif ()
 
 		# Use fancy colors in the compiler diagnostics
@@ -83,11 +99,16 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 
 	# Additional Clang-specific compiler settings.
 	elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-		# Check that we've got clang 7.0 or newer.
-		if (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0))
-			message(FATAL_ERROR "${PROJECT_NAME} requires clang++ 7.0 or greater.")
+		if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+			if (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17.0))
+				message(FATAL_ERROR "${PROJECT_NAME} requires AppleClang 17.0 or greater.")
+			endif ()
+		elseif (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0))
+			message(FATAL_ERROR "${PROJECT_NAME} requires clang++ 19.0 or greater.")
 		endif ()
 
+		# use std::invoke_result, superseding std::result_of which has been removed in c++20
+		add_compile_definitions(BOOST_ASIO_HAS_STD_INVOKE_RESULT)
 		if ("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 			# Set stack size to 32MB - by default Apple's clang defines a stack size of 8MB.
 			# Normally 16MB is enough to run all tests, but it will exceed the stack, if -DSANITIZE=address is used.
@@ -137,7 +158,10 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s STRICT=1")
 			# Export the Emscripten-generated auxiliary methods which are needed by solc-js.
 			# Which methods of libsolc itself are exported is specified in libsolc/CMakeLists.txt.
-			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s EXTRA_EXPORTED_RUNTIME_METHODS=['cwrap','addFunction','removeFunction','UTF8ToString','lengthBytesUTF8','stringToUTF8','setValue']")
+			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s EXPORTED_RUNTIME_METHODS=['cwrap','addFunction','removeFunction','UTF8ToString','lengthBytesUTF8','stringToUTF8','setValue']")
+			# Read the embedded wasm binary from Module["wasmBinary"] (see scripts/ci/pack_soljson.sh).
+			# Since emscripten 3.1.46, STRICT=1 implies INCOMING_MODULE_JS_API=[], so we have to be explicit.
+			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s INCOMING_MODULE_JS_API=['wasmBinary']")
 			# Build for webassembly target.
 			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s WASM=1")
 			# Set webassembly build to synchronous loading.
@@ -146,6 +170,10 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s ALLOW_TABLE_GROWTH=1")
 			# Disable warnings about not being pure asm.js due to memory growth.
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-almost-asm")
+			# Increase stack size from 64kB to 16MB to prevent stack overflow issues.
+			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s STACK_SIZE=16mb")
+			# Increase memory size from 16MB to 32MB since the stack size is now 16MB.
+			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s INITIAL_MEMORY=32mb")
 		endif()
 	endif()
 
@@ -155,23 +183,25 @@ elseif (DEFINED MSVC)
 	# CMAKE_CXX_FLAGS_RELWITHDEBINFO for GCC/Clang does not include NDEBUG
 	string(REPLACE "/DNDEBUG" " " CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
-	add_compile_options(/MP)						# enable parallel compilation
-	add_compile_options(/EHsc)						# specify Exception Handling Model in msvc
-	add_compile_options(/WX)						# enable warnings-as-errors
-	add_compile_options(/wd4068)					# disable unknown pragma warning (4068)
-	add_compile_options(/wd4996)					# disable unsafe function warning (4996)
-	add_compile_options(/wd4503)					# disable decorated name length exceeded, name was truncated (4503)
-	add_compile_options(/wd4267)					# disable conversion from 'size_t' to 'type', possible loss of data (4267)
-	add_compile_options(/wd4180)					# disable qualifier applied to function type has no meaning; ignored (4180)
-	add_compile_options(/wd4290)					# disable C++ exception specification ignored except to indicate a function is not __declspec(nothrow) (4290)
-	add_compile_options(/wd4244)					# disable conversion from 'type1' to 'type2', possible loss of data (4244)
-	add_compile_options(/wd4800)					# disable forcing value to bool 'true' or 'false' (performance warning) (4800)
-	add_compile_options(-D_WIN32_WINNT=0x0600)		# declare Windows Vista API requirement
-	add_compile_options(-DNOMINMAX)					# undefine windows.h MAX && MIN macros cause it cause conflicts with std::min && std::max functions
-	add_compile_options(/utf-8)						# enable utf-8 encoding (solves warning 4819)
-	add_compile_options(-DBOOST_REGEX_NO_LIB)		# disable automatic boost::regex library selection
-	add_compile_options(-D_REGEX_MAX_STACK_COUNT=200000L)	# increase std::regex recursion depth limit
-	add_compile_options(/permissive-)				# specify standards conformance mode to the compiler
+	add_compile_options(/MP)                              # enable parallel compilation
+	add_compile_options(/EHsc)                            # specify Exception Handling Model in msvc
+	if(PEDANTIC)
+		add_compile_options(/WX)                          # enable warnings-as-errors
+	endif()
+	add_compile_options(/wd4068)                          # disable unknown pragma warning (4068)
+	add_compile_options(/wd4996)                          # disable unsafe function warning (4996)
+	add_compile_options(/wd4503)                          # disable decorated name length exceeded, name was truncated (4503)
+	add_compile_options(/wd4267)                          # disable conversion from 'size_t' to 'type', possible loss of data (4267)
+	add_compile_options(/wd4180)                          # disable qualifier applied to function type has no meaning; ignored (4180)
+	add_compile_options(/wd4290)                          # disable C++ exception specification ignored except to indicate a function is not __declspec(nothrow) (4290)
+	add_compile_options(/wd4244)                          # disable conversion from 'type1' to 'type2', possible loss of data (4244)
+	add_compile_options(/wd4800)                          # disable forcing value to bool 'true' or 'false' (performance warning) (4800)
+	add_compile_options(-D_WIN32_WINNT=0x0600)            # declare Windows Vista API requirement
+	add_compile_options(-DNOMINMAX)                       # undefine windows.h MAX && MIN macros cause it cause conflicts with std::min && std::max functions
+	add_compile_options(/utf-8)                           # enable utf-8 encoding (solves warning 4819)
+	add_compile_options(-DBOOST_REGEX_NO_LIB)             # disable automatic boost::regex library selection
+	add_compile_options(-D_REGEX_MAX_STACK_COUNT=200000L) # increase std::regex recursion depth limit
+	add_compile_options(/permissive-)                     # specify standards conformance mode to the compiler
 
 	# disable empty object file warning
 	set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
@@ -242,20 +272,3 @@ if(COVERAGE)
 	endif()
 	add_compile_options(-g --coverage)
 endif()
-
-# SMT Solvers integration
-option(USE_Z3 "Allow compiling with Z3 SMT solver integration" ON)
-if(UNIX AND NOT APPLE)
-	option(USE_Z3_DLOPEN "Dynamically load the Z3 SMT solver instead of linking against it." OFF)
-endif()
-option(USE_CVC4 "Allow compiling with CVC4 SMT solver integration" ON)
-
-if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang"))
-	option(USE_LD_GOLD "Use GNU gold linker" ON)
-	if (USE_LD_GOLD)
-		execute_process(COMMAND ${CMAKE_CXX_COMPILER} -fuse-ld=gold -Wl,--version ERROR_QUIET OUTPUT_VARIABLE LD_VERSION)
-		if ("${LD_VERSION}" MATCHES "GNU gold")
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fuse-ld=gold")
-		endif ()
-	endif ()
-endif ()

@@ -28,7 +28,6 @@
 #include <libyul/AST.h>
 #include <libyul/Utilities.h>
 
-using namespace std;
 using namespace solidity;
 using namespace solidity::util;
 using namespace solidity::evmasm;
@@ -50,17 +49,17 @@ void EqualStoreEliminator::visit(Statement& _statement)
 {
 	// No need to consider potential changes through complex arguments since
 	// isSimpleStore only returns something if the arguments are identifiers.
-	if (ExpressionStatement const* expression = get_if<ExpressionStatement>(&_statement))
+	if (ExpressionStatement const* expression = std::get_if<ExpressionStatement>(&_statement))
 	{
 		if (auto vars = isSimpleStore(StoreLoadLocation::Storage, *expression))
 		{
-			if (auto const* currentValue = valueOrNullptr(m_storage, vars->first))
+			if (std::optional<YulName> currentValue = storageValue(vars->first))
 				if (*currentValue == vars->second)
 					m_pendingRemovals.insert(&_statement);
 		}
 		else if (auto vars = isSimpleStore(StoreLoadLocation::Memory, *expression))
 		{
-			if (auto const* currentValue = valueOrNullptr(m_memory, vars->first))
+			if (std::optional<YulName> currentValue = memoryValue(vars->first))
 				if (*currentValue == vars->second)
 					m_pendingRemovals.insert(&_statement);
 		}

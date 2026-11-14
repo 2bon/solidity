@@ -4,8 +4,5 @@ contract C {
         x = b;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f(bool): true -> true

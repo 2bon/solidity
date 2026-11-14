@@ -12,9 +12,5 @@ contract Test {
         r = x.b;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 3

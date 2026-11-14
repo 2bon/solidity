@@ -19,9 +19,5 @@ contract C {
         x4 = d;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // test() -> -2, 4, -112, 0

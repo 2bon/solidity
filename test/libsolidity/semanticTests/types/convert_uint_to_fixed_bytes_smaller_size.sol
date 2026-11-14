@@ -3,8 +3,5 @@ contract Test {
         return bytes2(uint16(h));
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // uintToBytes(uint32): 0x61626364 -> "cd"

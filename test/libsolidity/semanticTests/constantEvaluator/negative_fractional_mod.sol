@@ -5,8 +5,5 @@ contract C {
         return (x, (-(-t % 3)) * 5);
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 11, 10

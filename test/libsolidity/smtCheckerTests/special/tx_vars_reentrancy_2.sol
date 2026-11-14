@@ -13,6 +13,5 @@ contract C {
 // SMTEngine: all
 // SMTIgnoreOS: macos
 // ----
-// Warning 1218: (157-191): CHC: Error trying to invoke SMT solver.
-// Warning 6328: (157-191): CHC: Assertion violation might happen here.
-// Warning 4661: (157-191): BMC: Assertion violation happens here.
+// Warning 6328: (157-191): CHC: Assertion violation happens here.\nCounterexample:\n\n_i = 0\nx = 8465\n\nTransaction trace:\nC.constructor()\nC.g(0){ msg.value: 3 }\n    _i.f{ value: 100 }() -- untrusted external call
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

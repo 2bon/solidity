@@ -6,8 +6,5 @@ contract test {
         return a < x && x < b;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> true

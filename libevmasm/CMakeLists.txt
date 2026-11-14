@@ -1,8 +1,13 @@
 set(sources
+	AbstractAssemblyStack.h
 	Assembly.cpp
 	Assembly.h
 	AssemblyItem.cpp
 	AssemblyItem.h
+	Ethdebug.cpp
+	Ethdebug.h
+	EVMAssemblyStack.cpp
+	EVMAssemblyStack.h
 	BlockDeduplicator.cpp
 	BlockDeduplicator.h
 	CommonSubexpressionEliminator.cpp
@@ -37,7 +42,8 @@ set(sources
 	SimplificationRule.h
 	SimplificationRules.cpp
 	SimplificationRules.h
+	SubAssemblyID.h
 )
 
 add_library(evmasm ${sources})
-target_link_libraries(evmasm PUBLIC solutil fmt::fmt-header-only)
+target_link_libraries(evmasm PUBLIC solutil langutil fmt::fmt-header-only)

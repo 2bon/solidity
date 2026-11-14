@@ -14,8 +14,5 @@ contract C is V
 {
     function a() internal view override returns (uint256) { return 42; }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // b() -> 42

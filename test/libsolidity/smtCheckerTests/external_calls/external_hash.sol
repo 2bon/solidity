@@ -27,5 +27,6 @@ contract C {
 // SMTEngine: all
 // SMTIgnoreCex: yes
 // ----
-// Warning 6328: (390-412): CHC: Assertion violation happens here.
-// Info 1180: Reentrancy property(ies) for :C:\n!(<errorCode> = 1)\n<errorCode> = 0 -> no errors\n<errorCode> = 1 -> Assertion failed at assert(prevOwner == owner)\n<errorCode> = 3 -> Assertion failed at assert(sig_1 == sig_2)\n
+// Warning 6328: (390-412): CHC: Assertion violation happens here.\nCounterexample:\nowner = 0x0, sig_1 = 0x0, sig_2 = 0x01, d = 0\n\nTransaction trace:\nC.constructor(){ msg.sender: 0x0 }\nState: owner = 0x0, sig_1 = 0x0, sig_2 = 0x0, d = 0\nC.f1(0x0)\n    d.hash(_msg) -- untrusted external call\n    d.hash(_msg) -- untrusted external call\nState: owner = 0x0, sig_1 = 0x0, sig_2 = 0x01, d = 0\nC.inv()
+// Info 1391: CHC: 1 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 3993: The BMC engine of the SMTChecker is deprecated and will be removed in a future release. Please use the CHC engine instead.

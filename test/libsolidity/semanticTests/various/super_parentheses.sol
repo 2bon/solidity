@@ -24,9 +24,5 @@ contract D is B, C {
         return ((super).f)() | 8;
     }
 }
-
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 15

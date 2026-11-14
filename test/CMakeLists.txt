@@ -1,5 +1,5 @@
 set(sources
-    boostTest.cpp
+    soltest.cpp
     Common.cpp
     Common.h
     CommonSyntaxTest.cpp
@@ -13,13 +13,11 @@ set(sources
     InteractiveTests.h
     Metadata.cpp
     Metadata.h
-    TemporaryDirectory.cpp
-    TemporaryDirectory.h
-    TemporaryDirectoryTest.cpp
     TestCase.cpp
     TestCase.h
     TestCaseReader.cpp
     TestCaseReader.h
+    TestCaseTest.cpp
 )
 detect_stray_source_files("${sources}" ".")
 
@@ -34,8 +32,9 @@ set(libsolutil_sources
     libsolutil/Checksum.cpp
     libsolutil/CommonData.cpp
     libsolutil/CommonIO.cpp
+    libsolutil/DisjointSet.cpp
     libsolutil/FixedHash.cpp
-    libsolutil/IndentedWriter.cpp
+    libsolutil/FunctionSelector.cpp
     libsolutil/IpfsHash.cpp
     libsolutil/IterateReplacing.cpp
     libsolutil/JSON.cpp
@@ -44,6 +43,8 @@ set(libsolutil_sources
     libsolutil/LEB128.cpp
     libsolutil/StringUtils.cpp
     libsolutil/SwarmHash.cpp
+    libsolutil/TarjanSCC.cpp
+    libsolutil/TemporaryDirectoryTest.cpp
     libsolutil/UTF8.cpp
     libsolutil/Whiskers.cpp
 )
@@ -51,7 +52,11 @@ detect_stray_source_files("${libsolutil_sources}" "libsolutil/")
 
 set(libevmasm_sources
     libevmasm/Assembler.cpp
+    libevmasm/EVMAssemblyTest.cpp
+    libevmasm/EVMAssemblyTest.h
     libevmasm/Optimiser.cpp
+    libevmasm/PlainAssemblyParser.cpp
+    libevmasm/PlainAssemblyParser.h
 )
 detect_stray_source_files("${libevmasm_sources}" "libevmasm/")
 
@@ -75,14 +80,26 @@ set(libsolidity_sources
     libsolidity/ASTJSONTest.h
     libsolidity/ErrorCheck.cpp
     libsolidity/ErrorCheck.h
+    libsolidity/EthdebugResources.cpp
+    libsolidity/EthdebugTest.cpp
+    libsolidity/EthdebugTest.h
     libsolidity/GasCosts.cpp
     libsolidity/GasMeter.cpp
     libsolidity/GasTest.cpp
     libsolidity/GasTest.h
     libsolidity/Imports.cpp
     libsolidity/InlineAssembly.cpp
+    libsolidity/JSONExpectationTest.cpp
+    libsolidity/JSONExpectationTest.h
     libsolidity/LibSolc.cpp
     libsolidity/Metadata.cpp
+    libsolidity/MemoryGuardTest.cpp
+    libsolidity/MemoryGuardTest.h
+    libsolidity/MultiUseYulFunctionCollector.cpp
+    libsolidity/NatspecJSONTest.cpp
+    libsolidity/NatspecJSONTest.h
+    libsolidity/OptimizedIRCachingTest.cpp
+    libsolidity/OptimizedIRCachingTest.h
     libsolidity/SemanticTest.cpp
     libsolidity/SemanticTest.h
     libsolidity/SemVerMatcher.cpp
@@ -94,7 +111,6 @@ set(libsolidity_sources
     libsolidity/SolidityExecutionFramework.h
     libsolidity/SolidityExpressionCompiler.cpp
     libsolidity/SolidityNameAndTypeResolution.cpp
-    libsolidity/SolidityNatspecJSON.cpp
     libsolidity/SolidityOptimizer.cpp
     libsolidity/SolidityParser.cpp
     libsolidity/SolidityTypes.cpp
@@ -104,6 +120,8 @@ set(libsolidity_sources
     libsolidity/ViewPureChecker.cpp
     libsolidity/analysis/FunctionCallGraph.cpp
     libsolidity/interface/FileReader.cpp
+    libsolidity/ASTPropertyTest.h
+    libsolidity/ASTPropertyTest.cpp
 )
 detect_stray_source_files("${libsolidity_sources}" "libsolidity/")
 
@@ -111,6 +129,8 @@ set(libsolidity_util_sources
     libsolidity/util/BytesUtils.cpp
     libsolidity/util/BytesUtilsTests.cpp
     libsolidity/util/BytesUtils.h
+    libsolidity/util/Common.cpp
+    libsolidity/util/Common.h
     libsolidity/util/ContractABIUtils.cpp
     libsolidity/util/ContractABIUtils.h
     libsolidity/util/SoltestErrors.h
@@ -127,6 +147,8 @@ detect_stray_source_files("${libsolidity_util_sources}" "libsolidity/util/")
 set(libyul_sources
     libyul/Common.cpp
     libyul/Common.h
+    libyul/CallGraphTest.cpp
+    libyul/CallGraphTest.h
     libyul/CompilabilityChecker.cpp
     libyul/ControlFlowGraphTest.cpp
     libyul/ControlFlowGraphTest.h
@@ -134,8 +156,7 @@ set(libyul_sources
     libyul/ControlFlowSideEffectsTest.h
     libyul/EVMCodeTransformTest.cpp
     libyul/EVMCodeTransformTest.h
-    libyul/EwasmTranslationTest.cpp
-    libyul/EwasmTranslationTest.h
+    libyul/EVMDialectCompatibility.cpp
     libyul/FunctionSideEffects.cpp
     libyul/FunctionSideEffects.h
     libyul/Inliner.cpp
@@ -148,6 +169,7 @@ set(libyul_sources
     libyul/StackLayoutGeneratorTest.cpp
     libyul/StackLayoutGeneratorTest.h
     libyul/StackShufflingTest.cpp
+    libyul/StackShufflingTest.h
     libyul/SyntaxTest.h
     libyul/SyntaxTest.cpp
     libyul/YulInterpreterTest.cpp
@@ -156,6 +178,20 @@ set(libyul_sources
     libyul/YulOptimizerTest.h
     libyul/YulOptimizerTestCommon.cpp
     libyul/YulOptimizerTestCommon.h
+    libyul/ssa/CallGraphTest.cpp
+    libyul/ssa/CallGraphTest.h
+    libyul/ssa/ControlFlowGraphTest.cpp
+    libyul/ssa/ControlFlowGraphTest.h
+    libyul/ssa/ParserTest.cpp
+    libyul/ssa/ParserTest.h
+    libyul/ssa/PrinterTest.cpp
+    libyul/ssa/PrinterTest.h
+    libyul/ssa/SpillTest.cpp
+    libyul/ssa/SpillTest.h
+    libyul/ssa/StackLayoutGeneratorTest.cpp
+    libyul/ssa/StackLayoutGeneratorTest.h
+    libyul/ssa/StackShufflerTest.cpp
+    libyul/ssa/StackShufflerTest.h
 )
 detect_stray_source_files("${libyul_sources}" "libyul/")
 
@@ -216,3 +252,7 @@ endif()
 
 add_subdirectory(tools)
 add_subdirectory(evmc)
+
+if (PROPERTY_BASED_TESTS)
+    add_subdirectory(fuzztest)
+endif()

@@ -3,8 +3,5 @@ contract test {
         return true ? 5 : 10;
     }
 }
-// ====
-// compileToEwasm: also
-// compileViaYul: also
 // ----
 // f() -> 5
